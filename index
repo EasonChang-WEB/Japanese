@@ -1,0 +1,669 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Book, PenTool, LayoutGrid, ChevronLeft, ChevronRight, Save, Trash2, Download, Upload, Plus, RotateCcw, CheckCircle, XCircle, Brain, Volume2, Search, Settings, Cloud, LogIn, LogOut } from 'lucide-react';
+
+// --- 您的 Firebase 設定 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCBOmSZTrEqti7TnCFaSfZlXCmjVqY7mn8",
+  authDomain: "japanese-2faca.firebaseapp.com",
+  projectId: "japanese-2faca",
+  storageBucket: "japanese-2faca.firebasestorage.app",
+  messagingSenderId: "423393532516",
+  appId: "1:423393532516:web:1bdd2baf986b377542dd71",
+  measurementId: "G-NVRF6XDB83"
+};
+
+// --- 五十音資料 ---
+const INITIAL_KANA = [
+    { char: 'あ', romaji: 'a', type: 'hira', group: '清音' }, { char: 'い', romaji: 'i', type: 'hira', group: '清音' }, { char: 'う', romaji: 'u', type: 'hira', group: '清音' }, { char: 'え', romaji: 'e', type: 'hira', group: '清音' }, { char: 'お', romaji: 'o', type: 'hira', group: '清音' },
+    { char: 'か', romaji: 'ka', type: 'hira', group: '清音' }, { char: 'き', romaji: 'ki', type: 'hira', group: '清音' }, { char: 'く', romaji: 'ku', type: 'hira', group: '清音' }, { char: 'け', romaji: 'ke', type: 'hira', group: '清音' }, { char: 'こ', romaji: 'ko', type: 'hira', group: '清音' },
+    { char: 'さ', romaji: 'sa', type: 'hira', group: '清音' }, { char: 'し', romaji: 'shi', type: 'hira', group: '清音' }, { char: 'す', romaji: 'su', type: 'hira', group: '清音' }, { char: 'せ', romaji: 'se', type: 'hira', group: '清音' }, { char: 'そ', romaji: 'so', type: 'hira', group: '清音' },
+    { char: 'た', romaji: 'ta', type: 'hira', group: '清音' }, { char: 'ち', romaji: 'chi', type: 'hira', group: '清音' }, { char: 'つ', romaji: 'tsu', type: 'hira', group: '清音' }, { char: 'て', romaji: 'te', type: 'hira', group: '清音' }, { char: 'と', romaji: 'to', type: 'hira', group: '清音' },
+    { char: 'な', romaji: 'na', type: 'hira', group: '清音' }, { char: 'に', romaji: 'ni', type: 'hira', group: '清音' }, { char: 'ぬ', romaji: 'nu', type: 'hira', group: '清音' }, { char: 'ね', romaji: 'ne', type: 'hira', group: '清音' }, { char: 'の', romaji: 'no', type: 'hira', group: '清音' },
+    { char: 'は', romaji: 'ha', type: 'hira', group: '清音' }, { char: 'ひ', romaji: 'hi', type: 'hira', group: '清音' }, { char: 'ふ', romaji: 'fu', type: 'hira', group: '清音' }, { char: 'へ', romaji: 'he', type: 'hira', group: '清音' }, { char: 'ほ', romaji: 'ho', type: 'hira', group: '清音' },
+    { char: 'ま', romaji: 'ma', type: 'hira', group: '清音' }, { char: 'み', romaji: 'mi', type: 'hira', group: '清音' }, { char: 'む', romaji: 'mu', type: 'hira', group: '清音' }, { char: 'め', romaji: 'me', type: 'hira', group: '清音' }, { char: 'も', romaji: 'mo', type: 'hira', group: '清音' },
+    { char: 'や', romaji: 'ya', type: 'hira', group: '清音' }, { char: '', romaji: '', type: 'hira', group: '清音' }, { char: 'ゆ', romaji: 'yu', type: 'hira', group: '清音' }, { char: '', romaji: '', type: 'hira', group: '清音' }, { char: 'よ', romaji: 'yo', type: 'hira', group: '清音' },
+    { char: 'ら', romaji: 'ra', type: 'hira', group: '清音' }, { char: 'り', romaji: 'ri', type: 'hira', group: '清音' }, { char: 'る', romaji: 'ru', type: 'hira', group: '清音' }, { char: 'れ', romaji: 're', type: 'hira', group: '清音' }, { char: 'ろ', romaji: 'ro', type: 'hira', group: '清音' },
+    { char: 'わ', romaji: 'wa', type: 'hira', group: '清音' }, { char: '', romaji: '', type: 'hira', group: '清音' }, { char: 'を', romaji: 'wo', type: 'hira', group: '清音' }, { char: '', romaji: '', type: 'hira', group: '清音' }, { char: 'ん', romaji: 'n', type: 'hira', group: '清音' },
+    { char: 'ア', romaji: 'a', type: 'kata', group: '清音' }, { char: 'イ', romaji: 'i', type: 'kata', group: '清音' }, { char: 'ウ', romaji: 'u', type: 'kata', group: '清音' }, { char: 'エ', romaji: 'e', type: 'kata', group: '清音' }, { char: 'オ', romaji: 'o', type: 'kata', group: '清音' },
+    { char: 'カ', romaji: 'ka', type: 'kata', group: '清音' }, { char: 'キ', romaji: 'ki', type: 'kata', group: '清音' }, { char: 'ク', romaji: 'ku', type: 'kata', group: '清音' }, { char: 'ケ', romaji: 'ke', type: 'kata', group: '清音' }, { char: 'コ', romaji: 'ko', type: 'kata', group: '清音' },
+    { char: 'サ', romaji: 'sa', type: 'kata', group: '清音' }, { char: 'シ', romaji: 'shi', type: 'kata', group: '清音' }, { char: 'ス', romaji: 'su', type: 'kata', group: '清音' }, { char: 'セ', romaji: 'se', type: 'kata', group: '清音' }, { char: 'ソ', romaji: 'so', type: 'kata', group: '清音' },
+    { char: 'タ', romaji: 'ta', type: 'kata', group: '清音' }, { char: 'チ', romaji: 'chi', type: 'kata', group: '清音' }, { char: 'ツ', romaji: 'tsu', type: 'kata', group: '清音' }, { char: 'テ', romaji: 'te', type: 'kata', group: '清音' }, { char: 'ト', romaji: 'to', type: 'kata', group: '清音' },
+    { char: 'ナ', romaji: 'na', type: 'kata', group: '清音' }, { char: 'ニ', romaji: 'ni', type: 'kata', group: '清音' }, { char: 'ヌ', romaji: 'nu', type: 'kata', group: '清音' }, { char: 'ネ', romaji: 'ne', type: 'kata', group: '清音' }, { char: 'ノ', romaji: 'no', type: 'kata', group: '清音' },
+    { char: 'ハ', romaji: 'ha', type: 'kata', group: '清音' }, { char: 'ヒ', romaji: 'hi', type: 'kata', group: '清音' }, { char: 'フ', romaji: 'fu', type: 'kata', group: '清音' }, { char: 'ヘ', romaji: 'he', type: 'kata', group: '清音' }, { char: 'ホ', romaji: 'ho', type: 'kata', group: '清音' },
+    { char: 'マ', romaji: 'ma', type: 'kata', group: '清音' }, { char: 'ミ', romaji: 'mi', type: 'kata', group: '清音' }, { char: 'ム', romaji: 'mu', type: 'kata', group: '清音' }, { char: 'メ', romaji: 'me', type: 'kata', group: '清音' }, { char: 'モ', romaji: 'mo', type: 'kata', group: '清音' },
+    { char: 'ヤ', romaji: 'ya', type: 'kata', group: '清音' }, { char: '', romaji: '', type: 'kata', group: '清音' }, { char: 'ユ', romaji: 'yu', type: 'kata', group: '清音' }, { char: '', romaji: '', type: 'kata', group: '清音' }, { char: 'ヨ', romaji: 'yo', type: 'kata', group: '清音' },
+    { char: 'ラ', romaji: 'ra', type: 'kata', group: '清音' }, { char: 'リ', romaji: 'ri', type: 'kata', group: '清音' }, { char: 'ル', romaji: 'ru', type: 'kata', group: '清音' }, { char: 'レ', romaji: 're', type: 'kata', group: '清音' }, { char: 'ロ', romaji: 'ro', type: 'kata', group: '清音' },
+    { char: 'ワ', romaji: 'wa', type: 'kata', group: '清音' }, { char: '', romaji: '', type: 'kata', group: '清音' }, { char: 'ヲ', romaji: 'wo', type: 'kata', group: '清音' }, { char: '', romaji: '', type: 'kata', group: '清音' }, { char: 'ン', romaji: 'n', type: 'kata', group: '清音' },
+    { char: 'が', romaji: 'ga', type: 'hira', group: '濁音' }, { char: 'ぎ', romaji: 'gi', type: 'hira', group: '濁音' }, { char: 'ぐ', romaji: 'gu', type: 'hira', group: '濁音' }, { char: 'げ', romaji: 'ge', type: 'hira', group: '濁音' }, { char: 'ご', romaji: 'go', type: 'hira', group: '濁音' },
+    { char: 'ざ', romaji: 'za', type: 'hira', group: '濁音' }, { char: 'じ', romaji: 'ji', type: 'hira', group: '濁音' }, { char: 'ず', romaji: 'zu', type: 'hira', group: '濁音' }, { char: 'ぜ', romaji: 'ze', type: 'hira', group: '濁音' }, { char: 'ぞ', romaji: 'zo', type: 'hira', group: '濁音' },
+    { char: 'だ', romaji: 'da', type: 'hira', group: '濁音' }, { char: 'ぢ', romaji: 'ji', type: 'hira', group: '濁音' }, { char: 'づ', romaji: 'zu', type: 'hira', group: '濁音' }, { char: 'で', romaji: 'de', type: 'hira', group: '濁音' }, { char: 'ど', romaji: 'do', type: 'hira', group: '濁音' },
+    { char: 'ば', romaji: 'ba', type: 'hira', group: '濁音' }, { char: 'び', romaji: 'bi', type: 'hira', group: '濁音' }, { char: 'ぶ', romaji: 'bu', type: 'hira', group: '濁音' }, { char: 'べ', romaji: 'be', type: 'hira', group: '濁音' }, { char: 'ぼ', romaji: 'bo', type: 'hira', group: '濁音' },
+    { char: 'ぱ', romaji: 'pa', type: 'hira', group: '半濁音' }, { char: 'ぴ', romaji: 'pi', type: 'hira', group: '半濁音' }, { char: 'ぷ', romaji: 'pu', type: 'hira', group: '半濁音' }, { char: 'ぺ', romaji: 'pe', type: 'hira', group: '半濁音' }, { char: 'ぽ', romaji: 'po', type: 'hira', group: '半濁音' },
+    { char: 'きゃ', romaji: 'kya', type: 'hira', group: '拗音' }, { char: 'きゅ', romaji: 'kyu', type: 'hira', group: '拗音' }, { char: 'きょ', romaji: 'kyo', type: 'hira', group: '拗音' },
+    { char: 'しゃ', romaji: 'sha', type: 'hira', group: '拗音' }, { char: 'しゅ', romaji: 'shu', type: 'hira', group: '拗音' }, { char: 'しょ', romaji: 'sho', type: 'hira', group: '拗音' },
+    { char: 'ちゃ', romaji: 'cha', type: 'hira', group: '拗音' }, { char: 'ちゅ', romaji: 'chu', type: 'hira', group: '拗音' }, { char: 'ちょ', romaji: 'cho', type: 'hira', group: '拗音' },
+];
+
+const KANA_QUIZ_POOL = INITIAL_KANA.filter(k => k.char !== '');
+
+// --- 單字資料 (511字) ---
+const INITIAL_VOCAB = [
+{id:1,word:'こんにちは',romaji:'konnichiwa',meaning:'你好'},{id:2,word:'さようなら',romaji:'sayounara',meaning:'再見(告別)'},{id:3,word:'じゃね',romaji:'jane',meaning:'再見-朋友 輕鬆 隨意'},{id:4,word:'またね',romaji:'matane',meaning:'下次見-期待'},{id:5,word:'かれ',romaji:'kare',meaning:'他'},
+{id:6,word:'かのじょ',romaji:'kanojo',meaning:'她'},{id:7,word:'わたし',romaji:'watashi',meaning:'我'},{id:8,word:'あなた',romaji:'anata',meaning:'你'},{id:9,word:'はは',romaji:'haha',meaning:'母(簡)'},{id:10,word:'おかあさん',romaji:'okaasan',meaning:'母'},
+{id:11,word:'ちち',romaji:'chichi',meaning:'父(簡)'},{id:12,word:'おとうさん',romaji:'otousan',meaning:'父'},{id:13,word:'おにいさん',romaji:'oniisan',meaning:'哥哥'},{id:14,word:'おねえさん',romaji:'oneesan',meaning:'姊姊'},{id:15,word:'いもうと',romaji:'imouto',meaning:'妹妹'},
+{id:16,word:'おとうと',romaji:'otouto',meaning:'弟弟'},{id:17,word:'むすめ',romaji:'musume',meaning:'女兒'},{id:18,word:'むすこ',romaji:'musuko',meaning:'兒子'},{id:19,word:'アメリカ',romaji:'amerika',meaning:'美國'},{id:20,word:'にほん',romaji:'nihon',meaning:'日本'},
+{id:21,word:'いぬ',romaji:'inu',meaning:'狗'},{id:22,word:'ねこ',romaji:'neko',meaning:'貓'},{id:23,word:'すき',romaji:'suki',meaning:'喜歡'},{id:24,word:'じん',romaji:'jin',meaning:'~人(國)'},{id:25,word:'です',romaji:'desu',meaning:'口語肯定的結尾'},
+{id:26,word:'ですか',romaji:'desuka',meaning:'是嗎?'},{id:27,word:'じゃありません',romaji:'jaarimasen',meaning:'口語否定的結尾'},{id:28,word:'たち',romaji:'tachi',meaning:'~達(複數人結尾/一般)'},{id:29,word:'ら',romaji:'ra',meaning:'~複數人結尾/輕浮'},{id:30,word:'パンダ',romaji:'panda',meaning:'熊貓'},
+{id:31,word:'うし',romaji:'ushi',meaning:'牛'},{id:32,word:'ひつじ',romaji:'hitsuji',meaning:'羊'},{id:33,word:'ぶた',romaji:'buta',meaning:'豬'},{id:34,word:'さかな',romaji:'sakana',meaning:'魚'},{id:35,word:'とり',romaji:'tori',meaning:'鳥'},
+{id:36,word:'にわとり',romaji:'niwatori',meaning:'雞'},{id:37,word:'これ',romaji:'kore',meaning:'這個'},{id:38,word:'それ',romaji:'sore',meaning:'那個(人物旁)'},{id:39,word:'あれ',romaji:'are',meaning:'那個(遠距離)'},{id:40,word:'はい',romaji:'hai',meaning:'是'},
+{id:41,word:'いいえ',romaji:'iie',meaning:'否'},{id:42,word:'おさけ',romaji:'osake',meaning:'お酒'},{id:43,word:'おちゃ',romaji:'ocha',meaning:'お茶'},{id:44,word:'コーヒー',romaji:'kouhi',meaning:'珈琲'},{id:45,word:'ジュース',romaji:'juusu',meaning:'果汁'},
+{id:46,word:'パン',romaji:'pan',meaning:'麵包'},{id:47,word:'ミルク',romaji:'miruku',meaning:'牛奶'},{id:48,word:'ぶたにく',romaji:'butaniku',meaning:'豚肉'},{id:49,word:'にく',romaji:'niku',meaning:'肉'},{id:50,word:'やさい',romaji:'yasai',meaning:'野菜'},
+{id:51,word:'をたべません',romaji:'otabemasen',meaning:'不吃'},{id:52,word:'をのみません',romaji:'onomimasen',meaning:'不喝'},{id:53,word:'と',romaji:'to',meaning:'和'},{id:54,word:'ぎゅうにく',romaji:'gyuuniku',meaning:'牛肉'},{id:55,word:'かばん',romaji:'kaban',meaning:'書包'},
+{id:56,word:'コンピューター',romaji:'konpyuta',meaning:'電腦'},{id:57,word:'しんぶん',romaji:'shinbun',meaning:'新聞'},{id:58,word:'とけい',romaji:'tokei',meaning:'時計'},{id:59,word:'ほん',romaji:'hon',meaning:'本；書'},{id:60,word:'じしょ',romaji:'jisho',meaning:'辞書；辭典'},
+{id:61,word:'かめら',romaji:'kamera',meaning:'相機'},{id:62,word:'この',romaji:'kono',meaning:'這…的(接名詞)'},{id:63,word:'その',romaji:'sono',meaning:'那…的(人附近)'},{id:64,word:'あの',romaji:'ano',meaning:'那…的(很遠地方)'},{id:65,word:'カード',romaji:'kaado',meaning:'卡'},
+{id:66,word:'シャープペンシル',romaji:'shaapupenshiru',meaning:'自動鉛筆'},{id:67,word:'ノート',romaji:'nooto',meaning:'筆記'},{id:68,word:'ボールペン',romaji:'boorupen',meaning:'原子筆'},{id:69,word:'かさ',romaji:'kasa',meaning:'傘'},{id:70,word:'めいし',romaji:'meishi',meaning:'名刺；名片'},
+{id:71,word:'てちょう',romaji:'techou',meaning:'手帳；筆記本'},{id:72,word:'かぎ',romaji:'kagi',meaning:'鍵；鑰匙'},{id:73,word:'えんぴつ',romaji:'enpitsu',meaning:'鉛筆'},{id:74,word:'だれ',romaji:'dare',meaning:'誰'},{id:75,word:'そうです',romaji:'soudesu',meaning:'是的、對的'},
+{id:76,word:'そうじゃありません',romaji:'soujaarimasen',meaning:'不是的、不對的'},{id:77,word:'たんじょうび',romaji:'tanjoubi',meaning:'誕生日；生日'},{id:78,word:'ドア',romaji:'doa',meaning:'門'},{id:79,word:'ひと',romaji:'hito',meaning:'人'},{id:80,word:'さん',romaji:'san',meaning:'～～桑'},
+{id:81,word:'まいにち',romaji:'mainichi',meaning:'毎日'},{id:82,word:'はな',romaji:'hana',meaning:'花'},{id:83,word:'みて',romaji:'mite',meaning:'見て；看'},{id:84,word:'ともだち',romaji:'tomodachi',meaning:'友達；朋友'},{id:85,word:'おくに',romaji:'okuni',meaning:'国'},
+{id:86,word:'エレベーター',romaji:'erebeetaa',meaning:'電梯'},{id:87,word:'トイレ',romaji:'toire',meaning:'洗手間'},{id:88,word:'かいしゃ',romaji:'kaisha',meaning:'会社；公司'},{id:89,word:'へや',romaji:'heya',meaning:'部屋；房間'},{id:90,word:'かいだん',romaji:'kaidan',meaning:'階段；樓梯'},
+{id:91,word:'しょくどう',romaji:'shokudou',meaning:'食堂'},{id:92,word:'ここ',romaji:'koko',meaning:'這裡'},{id:93,word:'そこ',romaji:'soko',meaning:'那裡'},{id:94,word:'あそこ',romaji:'asoko',meaning:'那裡(較遠)'},{id:95,word:'どこ',romaji:'doko',meaning:'哪裡？(詢問地點)'},
+{id:96,word:'こちら',romaji:'kochira',meaning:'這裡(禮貌用法)'},{id:97,word:'そちら',romaji:'sochira',meaning:'那裡(禮貌用法)'},{id:98,word:'あちら',romaji:'achira',meaning:'那裡(較遠 禮貌用法)'},{id:99,word:'どちら',romaji:'dochira',meaning:'哪裡(禮貌用法)'},{id:100,word:'ぎんこう',romaji:'ginkou',meaning:'銀行'},
+{id:101,word:'から まで',romaji:'kara made',meaning:'從...到'},{id:102,word:'れい',romaji:'rei',meaning:'零(漢音)'},{id:103,word:'まる',romaji:'maru',meaning:'零(和音)'},{id:104,word:'ゼロ',romaji:'zero',meaning:'零(外來語)'},{id:105,word:'ひゃく',romaji:'hyaku',meaning:'百'},
+{id:106,word:'せん',romaji:'sen',meaning:'千'},{id:107,word:'はたらきます',romaji:'hatara kimasu',meaning:'働きます；工作'},{id:108,word:'べんきょうします',romaji:'benkyou shimasu',meaning:'勉強します；學習'},{id:109,word:'じ',romaji:'ji',meaning:'時'},{id:110,word:'よじ',romaji:'yoji',meaning:'4時'},
+{id:111,word:'くじ',romaji:'kuji',meaning:'9時'},{id:112,word:'じゅういちじ',romaji:'juuichiji',meaning:'11時'},{id:113,word:'じゅうにじ',romaji:'juuniji',meaning:'12時'},{id:114,word:'ふん',romaji:'fun',meaning:'分鐘(2.5.7.9)'},{id:115,word:'ぷん',romaji:'pun',meaning:'分鐘(1.3.4.6.8.10)'},
+{id:116,word:'いっぷん',romaji:'ippun',meaning:'1分'},{id:117,word:'さんぷん',romaji:'sanpun',meaning:'3分'},{id:118,word:'よんぷん',romaji:'yon pun',meaning:'4分'},{id:119,word:'ろっぷん',romaji:'roppun',meaning:'6分'},{id:120,word:'はっぷん',romaji:'happun',meaning:'8分'},
+{id:121,word:'じっぷん',romaji:'jippun',meaning:'10分'},{id:122,word:'にふん',romaji:'nifun',meaning:'2分'},{id:123,word:'ごふん',romaji:'gofun',meaning:'5分'},{id:124,word:'ななふん',romaji:'nanafun',meaning:'7分'},{id:125,word:'きゅうふん',romaji:'kyuufun',meaning:'9分'},
+{id:126,word:'まいあさ',romaji:'maiasa',meaning:'毎朝'},{id:127,word:'まいばん',romaji:'maiban',meaning:'毎晩'},{id:128,word:'まいにち',romaji:'mainichi',meaning:'毎日'},{id:129,word:'きのう',romaji:'kinou',meaning:'昨日'},{id:130,word:'きょう',romaji:'kyou',meaning:'今日'},
+{id:131,word:'あした',romaji:'ashita',meaning:'明日'},{id:132,word:'いま',romaji:'ima',meaning:'今；現在'},{id:133,word:'やすみます',romaji:'yasumimasu',meaning:'休みます；休息'},{id:134,word:'なん',romaji:'nan',meaning:'何'},{id:135,word:'ました',romaji:'mashita',meaning:'ます過去式'},
+{id:136,word:'でした',romaji:'deshita',meaning:'です過去式'},{id:137,word:'みつかり',romaji:'mitsukari',meaning:'見つかり；被找到'},{id:138,word:'としょかん',romaji:'toshokan',meaning:'図書館'},{id:139,word:'おおさか',romaji:'oosaka',meaning:'大阪'},{id:140,word:'とうきょう',romaji:'toukyou',meaning:'東京'},
+{id:142,word:'あさ',romaji:'asa',meaning:'朝；早上'},{id:143,word:'ひる',romaji:'hiru',meaning:'昼；中午'},{id:144,word:'ばん',romaji:'ban',meaning:'晩；晚上'},{id:145,word:'で',romaji:'de',meaning:'接動態動詞'},{id:146,word:'に',romaji:'ni',meaning:'接靜態動詞；具體時間'},
+{id:147,word:'ねます',romaji:'nemasu',meaning:'寝ます；睡覺'},{id:148,word:'おきます',romaji:'okimasu',meaning:'起きます；起床'},{id:149,word:'はやく',romaji:'hayaku',meaning:'早く；快點'},{id:150,word:'いきます',romaji:'ikimasu',meaning:'行きます；去'},{id:151,word:'きます',romaji:'kimasu',meaning:'来ます；來'},
+{id:152,word:'かえります',romaji:'kaerimasu',meaning:'帰ります；回'},{id:153,word:'なに',romaji:'nani',meaning:'何；什麼'},{id:154,word:'がっこう',romaji:'gakkou',meaning:'学校'},{id:155,word:'きょうしつ',romaji:'kyoushitsu',meaning:'教室'},{id:156,word:'タクシー',romaji:'takushii',meaning:'計程車'},
+{id:157,word:'バイク',romaji:'baiku',meaning:'摩托車'},{id:158,word:'じてんしゃ',romaji:'jitenja',meaning:'自転車；自行車'},{id:159,word:'じどうしゃ',romaji:'jidonucha',meaning:'自動車；汽車'},{id:160,word:'でんしゃ',romaji:'densha',meaning:'電車'},{id:161,word:'えき',romaji:'eki',meaning:'駅；車站'},
+{id:162,word:'ひとり',romaji:'hitori',meaning:'1人(助詞＋で)'},{id:163,word:'ふたり',romaji:'futari',meaning:'2人'},{id:164,word:'さんにん',romaji:'sannin',meaning:'3人'},{id:165,word:'よにん',romaji:'yonin',meaning:'4人'},{id:166,word:'ごにん',romaji:'gonin',meaning:'5人'},
+{id:167,word:'ろくにん',romaji:'rokunin',meaning:'6人'},{id:168,word:'しちにん',romaji:'shichinin',meaning:'7人'},{id:169,word:'はちにん',romaji:'hachinin',meaning:'8人'},{id:170,word:'きゅうにん',romaji:'kyuunin',meaning:'9人'},{id:171,word:'じゅうにん',romaji:'jyuunin',meaning:'10人'},
+{id:172,word:'あるいて',romaji:'aruite',meaning:'歩いて；步行'},{id:173,word:'りょこう',romaji:'ryokou',meaning:'旅行'},{id:174,word:'ねん',romaji:'nen',meaning:'年'},{id:175,word:'がつ',romaji:'gatsu',meaning:'月'},{id:176,word:'いちがつ',romaji:'ichigatsu',meaning:'一月'},
+{id:177,word:'しがつ',romaji:'shigatsu',meaning:'四月'},{id:178,word:'しちがつ',romaji:'shichigatsu',meaning:'七月'},{id:179,word:'くがつ',romaji:'kugatsu',meaning:'九月'},{id:180,word:'かげつ',romaji:'kagetsu',meaning:'~個月'},{id:181,word:'いっかげつ',romaji:'i kagetsu',meaning:'一ヶ月；1個月'},
+{id:182,word:'にかげつ',romaji:'nikagetsu',meaning:'二ヶ月；2個月'},{id:183,word:'ろっかげつ',romaji:'ro kagetsu',meaning:'六ヶ月；6個月'},{id:184,word:'じっかげつ',romaji:'ji kagetsu',meaning:'十ヶ月；10個月'},{id:185,word:'にち',romaji:'nichi',meaning:'日'},{id:186,word:'ついたち',romaji:'tsuitachi',meaning:'1日'},
+{id:187,word:'ふつか',romaji:'futsuka',meaning:'2日'},{id:188,word:'みっか',romaji:'mikka',meaning:'3日'},{id:189,word:'よっか',romaji:'yokka',meaning:'4日'},{id:190,word:'いつか',romaji:'itsuka',meaning:'5日'},{id:191,word:'むいか',romaji:'muika',meaning:'6日'},
+{id:192,word:'なのか',romaji:'nanoka',meaning:'7日'},{id:193,word:'ようか',romaji:'youka',meaning:'8日'},{id:194,word:'ここのか',romaji:'kokonoka',meaning:'9日'},{id:195,word:'とおか',romaji:'tooka',meaning:'10日'},{id:196,word:'じゅうしちにち',romaji:'jyuushichinichi',meaning:'17日'},
+{id:197,word:'じゅうくにち',romaji:'jyuukunichi',meaning:'19日'},{id:198,word:'にじゅうしちにち',romaji:'nijyuushichinichi',meaning:'27日'},{id:199,word:'にじゅうくにち',romaji:'nijyuukunichi',meaning:'29日'},{id:200,word:'じゅうよっか',romaji:'jyuuyokka',meaning:'14日'},{id:201,word:'にじゅうよっか',romaji:'nijyuuyokka',meaning:'24日'},
+{id:202,word:'はつか',romaji:'hatsuka',meaning:'20日'},{id:203,word:'きょう',romaji:'kyou',meaning:'今日'},{id:204,word:'なんにち',romaji:'nannichi',meaning:'何日'},{id:205,word:'ようび',romaji:'youbi',meaning:'曜日；星期'},{id:206,word:'こんしゅう',romaji:'konshuu',meaning:'今週；這星期'},
+{id:207,word:'らいしゅう',romaji:'raishuu',meaning:'来週；下星期'},{id:208,word:'せんしゅう',romaji:'senshuu',meaning:'先週；上星期'},{id:209,word:'にちようび',romaji:'nichiyoubi',meaning:'日曜日；星期日'},{id:210,word:'げつようび',romaji:'getsuyoubi',meaning:'月曜日；星期一'},{id:211,word:'かようび',romaji:'kayoubi',meaning:'火曜日；星期二'},
+{id:212,word:'すいようび',romaji:'suiyobi',meaning:'水曜日；星期三'},{id:213,word:'もくようび',romaji:'mokuyobi',meaning:'木曜日；星期四'},{id:214,word:'きんようび',romaji:'kinyoubi',meaning:'金曜日；星期五'},{id:215,word:'どようび',romaji:'doyoubi',meaning:'土曜日；星期六'},{id:216,word:'なんようび',romaji:'nanyoubi',meaning:'何曜日；星期幾'},
+{id:217,word:'いえ',romaji:'ie',meaning:'家(物理空間 客觀描述)'},{id:218,word:'うち',romaji:'uchi',meaning:'家(主觀情感 口語)'},{id:219,word:'しごと',romaji:'shigoto',meaning:'(お)仕事；工作'},{id:220,word:'パーティー',romaji:'paatii',meaning:'派對'},{id:221,word:'かいぎ',romaji:'kaigi',meaning:'会議；會議'},
+{id:222,word:'しゅくだい',romaji:'shukudai',meaning:'宿題；家庭作業'},{id:223,word:'えいが',romaji:'eiga',meaning:'映画；動畫'},{id:224,word:'おんがく',romaji:'ongaku',meaning:'音楽；音樂'},{id:225,word:'とても',romaji:'totemo',meaning:'非常 格外(正式用法)'},{id:226,word:'すごく',romaji:'sugoku',meaning:'表程度很厲害'},
+{id:227,word:'すごい',romaji:'sugoi',meaning:'太厲害了'},{id:228,word:'すてきな',romaji:'sutekina',meaning:'素敵な；非常棒、漂亮...'},{id:229,word:'まじ',romaji:'maji',meaning:'真；超級(同輩晚輩間)'},{id:230,word:'ごはん',romaji:'gohan',meaning:'ご飯；飯；頓飯'},{id:231,word:'ひるごはん',romaji:'hiru gohan',meaning:'昼ご飯；午飯'},
+{id:232,word:'ばんごはん',romaji:'ban gohan',meaning:'晩ご飯；晚飯'},{id:233,word:'あさごはん',romaji:'asa gohan',meaning:'朝ご飯；早飯'},{id:234,word:'いっしょに',romaji:'issho ni',meaning:'一緒に；一起'},{id:235,word:'ちょっと',romaji:'chotto',meaning:'一會兒'},{id:236,word:'あとで',romaji:'atode',meaning:'在...之後'},
+{id:237,word:'ましゅう',romaji:'mashuu',meaning:'邀請結尾的口語用法'},{id:238,word:'ましょう',romaji:'mashou',meaning:'邀請結尾的正式用法'},{id:239,word:'ええ',romaji:'ee',meaning:'是(はい的親切用法)'},{id:240,word:'いいですね',romaji:'ii desu ne',meaning:'不錯哦 太好了 很棒喔'},{id:241,word:'サッカー',romaji:'sakkaa',meaning:'足球'},
+{id:242,word:'テニス',romaji:'tenisu',meaning:'網球'},{id:243,word:'すもう',romaji:'sumou',meaning:'相撲'},{id:244,word:'やきゅう',romaji:'yakyuu',meaning:'野球；棒球'},{id:245,word:'スポーツ',romaji:'supootsu',meaning:'運動'},{id:246,word:'を、に、で、へ、き、が',romaji:'',meaning:'助詞'},
+{id:247,word:'で',romaji:'',meaning:'助詞(做某事的工具或方法)'},{id:248,word:'はし',romaji:'hashi',meaning:'筷子'},{id:249,word:'スプーン',romaji:'supuun',meaning:'湯匙'},{id:250,word:'ナイフ',romaji:'naifu',meaning:'刀子'},{id:251,word:'ありがとう',romaji:'arigatou',meaning:'謝謝'},
+{id:252,word:'おみやげ',romaji:'omiyage',meaning:'お土産；伴手禮'},{id:253,word:'おかね',romaji:'okane',meaning:'お金；錢'},{id:254,word:'パソコン',romaji:'pasokon',meaning:'個人電腦'},{id:255,word:'プレゼント',romaji:'purezento',meaning:'禮物'},{id:256,word:'けしょうひん',romaji:'keshouhin',meaning:'化粧品'},
+{id:257,word:'でんわ',romaji:'denwa',meaning:'電話'},{id:258,word:'あげます',romaji:'agemasu',meaning:'給、贈送'},{id:259,word:'あいます',romaji:'aimasu',meaning:'会います；會面、見面'},{id:260,word:'もらいます',romaji:'moraimasu',meaning:'得到、接受'},{id:261,word:'かします',romaji:'kashimasu',meaning:'貸します；借出、貸出'},
+{id:262,word:'かります',romaji:'karimasu',meaning:'借ります；借入'},{id:263,word:'おしえます',romaji:'oshiemasu',meaning:'教えます；教、告訴'},{id:264,word:'ならいます',romaji:'naraimasu',meaning:'習います；學習、習得'},{id:265,word:'かけます',romaji:'kakemasu',meaning:'掛上、打(電話)'},{id:266,word:'きゅうりょう',romaji:'kyuuryou',meaning:'給料；薪水、工資'},
+{id:267,word:'います',romaji:'imasu',meaning:'(が)有(for人/動物)'},{id:268,word:'いません',romaji:'imasen',meaning:'(が)沒有(for人/動物)'},{id:269,word:'あります',romaji:'arimasu',meaning:'(が)有(for物體/植物)'},{id:270,word:'ありません',romaji:'arimasen',meaning:'(が)沒有(for物體/植物)'},{id:271,word:'みます',romaji:'mimasu',meaning:'見ます；看、瞧、望'},
+{id:272,word:'ききます',romaji:'kikimasu',meaning:'聞きます；聽'},{id:273,word:'たべます',romaji:'tabemasu',meaning:'(を)食べます；吃(敬體)'},{id:274,word:'たべる',romaji:'taberu',meaning:'食べる；吃(口語)'},{id:275,word:'たべた',romaji:'tabeta',meaning:'食べた；吃(過去式)'},{id:276,word:'たべたこと',romaji:'tabetakoto',meaning:'吃過的事情'},
+{id:277,word:'のみます',romaji:'nomimasu',meaning:'(を)飲みます 喝'},{id:278,word:'のります',romaji:'norimasu',meaning:'乗ります；乘坐'},{id:279,word:'きります',romaji:'kirimasu',meaning:'切ります；切'},{id:280,word:'きれい',romaji:'kirei',meaning:'乾淨 美麗(な)'},{id:281,word:'ハンサム',romaji:'hansamu',meaning:'帥(な)'},
+{id:282,word:'げんき',romaji:'genki',meaning:'元気；健康(な)'},{id:283,word:'おおきい',romaji:'ookii',meaning:'大きい；大的'},{id:284,word:'ちいさい',romaji:'chiisai',meaning:'小さい；小的'},{id:285,word:'きらい',romaji:'kirai',meaning:'嫌い；討厭 不喜(な)'},{id:286,word:'ひま',romaji:'hima',meaning:'暇；有空(な)'},
+{id:287,word:'さむい',romaji:'samui',meaning:'寒い；寒冷'},{id:288,word:'あつい',romaji:'atsui',meaning:'暑い；熱'},{id:289,word:'さむくない',romaji:'samukunai',meaning:'寒冷否定形式'},{id:290,word:'あつくない',romaji:'atsukunai',meaning:'熱否定形式'},{id:291,word:'みず',romaji:'mizu',meaning:'水'},
+{id:292,word:'はない',romaji:'hanai',meaning:'はい的否定形式'},{id:293,word:'たべはない',romaji:'tabehanai',meaning:'不吃'},{id:294,word:'くない',romaji:'kunai',meaning:'い的否定用法'},{id:295,word:'たい',romaji:'tai',meaning:'～い的想要用法'},{id:296,word:'いい',romaji:'ii',meaning:'好(口語)'},
+{id:297,word:'よくない',romaji:'yokunai',meaning:'不好'},{id:298,word:'すてき',romaji:'suteki',meaning:'素敵；漂亮 極好'},{id:299,word:'ひくい',romaji:'hikui',meaning:'低い；矮'},{id:300,word:'たかい',romaji:'takai',meaning:'高い；高'},{id:301,word:'やま',romaji:'yama',meaning:'山'},
+{id:302,word:'ふじさん',romaji:'fujisan',meaning:'富士山'},{id:303,word:'べんり',romaji:'benri',meaning:'便利'},{id:304,word:'やすい',romaji:'yasui',meaning:'安い；便宜'},{id:305,word:'わるい',romaji:'warui',meaning:'悪い；壞的 不好 惡劣的'},{id:306,word:'ゆうめい',romaji:'yuumei',meaning:'有名'},
+{id:307,word:'しんせつ',romaji:'shinsetsu',meaning:'親切'},{id:308,word:'タイ',romaji:'tai',meaning:'泰國'},{id:309,word:'ほしい',romaji:'hoshii',meaning:'欲しい；想要 渴望'},{id:310,word:'コート',romaji:'kooto',meaning:'外套'},{id:311,word:'シャツ',romaji:'shatsu',meaning:'襯衫'},
+{id:312,word:'スカート',romaji:'sukaato',meaning:'裙子'},{id:313,word:'ズボン',romaji:'zubon',meaning:'褲子'},{id:314,word:'セーター',romaji:'seetaa',meaning:'毛衣'},{id:315,word:'ぼうし',romaji:'boushi',meaning:'帽子'},{id:316,word:'めがね',romaji:'megane',meaning:'眼鏡'},
+{id:317,word:'くつ',romaji:'kutsu',meaning:'靴；'},{id:318,word:'ながい',romaji:'nagai',meaning:'長い；長'},{id:319,word:'みじかい',romaji:'mijikai',meaning:'短い；'},{id:320,word:'グレー',romaji:'guree',meaning:'灰色'},{id:321,word:'ピンク',romaji:'pinku',meaning:'粉紅色'},
+{id:322,word:'ベージュ',romaji:'beeju',meaning:'米色'},{id:323,word:'しろい',romaji:'shiroi',meaning:'白い'},{id:324,word:'むらさき',romaji:'murasaki',meaning:'紫'},{id:325,word:'みどり',romaji:'midori',meaning:'緑'},{id:326,word:'ちゃいろい',romaji:'chairoi',meaning:'茶色い；棕色'},
+{id:327,word:'あかい',romaji:'akai',meaning:'赤い'},{id:328,word:'あおい',romaji:'aoi',meaning:'青い'},{id:329,word:'きいろい',romaji:'kiiroi',meaning:'黄色い'},{id:330,word:'くろい',romaji:'kuroi',meaning:'黒い'},{id:331,word:'はだ',romaji:'hada',meaning:'肌；皮膚'},
+{id:332,word:'いちご',romaji:'ichigo',meaning:'草莓'},{id:333,word:'みかん',romaji:'mikan',meaning:'蜜柑；橘子'},{id:334,word:'リンゴ',romaji:'ringo',meaning:'林檎；蘋果'},{id:335,word:'バナナ',romaji:'banana',meaning:'香蕉'},{id:336,word:'りょうり',romaji:'ryouri',meaning:'料理'},
+{id:337,word:'くすり',romaji:'kusuri',meaning:'薬'},{id:338,word:'からい',romaji:'karai',meaning:'辛い；辣的'},{id:339,word:'にがい',romaji:'nigai',meaning:'苦い；苦的'},{id:340,word:'しおからい',romaji:'shiokarai',meaning:'塩辛い；鹹的'},{id:341,word:'あじ',romaji:'aji',meaning:'味；味道'},
+{id:342,word:'あまい',romaji:'amai',meaning:'甘い；甜的'},{id:343,word:'すっぱい',romaji:'suppai',meaning:'酸っぱい；酸的'},{id:344,word:'こい',romaji:'koi',meaning:'濃い；濃的'},{id:345,word:'うすい',romaji:'usui',meaning:'薄い；淡的'},{id:346,word:'どう',romaji:'dou',meaning:'如何'},
+{id:347,word:'はる',romaji:'haru',meaning:'春'},{id:348,word:'なつ',romaji:'natsu',meaning:'夏'},{id:349,word:'あき',romaji:'aki',meaning:'秋'},{id:350,word:'ふゆ',romaji:'fuyu',meaning:'冬'},{id:351,word:'てんき',romaji:'tenki',meaning:'天気'},
+{id:352,word:'はれ',romaji:'hare',meaning:'晴れ'},{id:353,word:'あめ',romaji:'ame',meaning:'雨'},{id:354,word:'くもり',romaji:'kumori',meaning:'曇り；多雲'},{id:355,word:'ゆき',romaji:'yuki',meaning:'雪'},{id:356,word:'ふります',romaji:'furimasu',meaning:'降ります；下(雨 雪)'},
+{id:357,word:'くち',romaji:'kuchi',meaning:'口'},{id:358,word:'め',romaji:'me',meaning:'目'},{id:359,word:'あし',romaji:'ashi',meaning:'足'},{id:360,word:'かみ',romaji:'kami',meaning:'髪'},{id:361,word:'はな',romaji:'hana',meaning:'鼻'},
+{id:362,word:'かたかな',romaji:'katakana',meaning:'片仮名；平假名'},{id:363,word:'ひらがな',romaji:'hiragana',meaning:'平仮名；片假名'},{id:364,word:'かんじ',romaji:'kanji',meaning:'漢字'},{id:365,word:'わかります',romaji:'wakarimasu',meaning:'懂 了解'},{id:366,word:'すこし',romaji:'sukoshi',meaning:'少し；一點(接肯定)'},
+{id:367,word:'にほんご',romaji:'nihongo',meaning:'日本語'},{id:368,word:'えいご',romaji:'eigo',meaning:'英語'},{id:369,word:'ベトナム語',romaji:'betonamugo',meaning:'越南語'},{id:370,word:'ちゅうごくご',romaji:'chuugokugo',meaning:'中国語'},{id:371,word:'よく',romaji:'yoku',meaning:'好 清楚'},
+{id:372,word:'だいたい',romaji:'daitai',meaning:'大概(接肯定)'},{id:373,word:'あまり',romaji:'amari',meaning:'不太...(接否定)'},{id:374,word:'ぜんぜん',romaji:'zenzen',meaning:'全然；完全不(接否定)'},{id:375,word:'ふくざつ',romaji:'fukuzatsu',meaning:'複雑'},{id:376,word:'さいこう',romaji:'saikou',meaning:'最高；最棒了 最好了'},
+{id:377,word:'すばらしい',romaji:'subaashii',meaning:'素晴らしい；很棒 很優秀'},{id:378,word:'すごい',romaji:'sugoi',meaning:'很厲害 驚人'},{id:379,word:'いいね',romaji:'iine',meaning:'不錯喔'},{id:380,word:'イギリス',romaji:'igirisu',meaning:'英国'},{id:381,word:'イタリア',romaji:'itaria',meaning:'義大利'},
+{id:382,word:'たべもの',romaji:'tabemono',meaning:'食べ物；食物'},{id:383,word:'もの',romaji:'mono',meaning:'物品、東西、事物'},{id:384,word:'のみもの',romaji:'nomimono',meaning:'飲み物；飲料'},{id:385,word:'かいもの',romaji:'kaimono',meaning:'買い物；買的東西'},{id:386,word:'おいしい',romaji:'oishii',meaning:'美味しい；美味'},
+{id:387,word:'うまい',romaji:'umai',meaning:'美味い；'},{id:388,word:'ふるい',romaji:'furui',meaning:'古い；舊'},{id:389,word:'ところ',romaji:'tokoro',meaning:'地點、地方'},{id:390,word:'が',romaji:'ga',meaning:'但是(連接詞)'},{id:391,word:'どんな',romaji:'donna',meaning:'什麼樣的,哪一種的(+名)'},
+{id:392,word:'どれ',romaji:'dore',meaning:'哪一個(三個或以上)'},{id:393,word:'どこ',romaji:'doko',meaning:'詢問地點'},{id:394,word:'どの',romaji:'dono',meaning:'哪一個(詢問特定的選項)'},{id:395,word:'だれ',romaji:'dare',meaning:'詢問人的身份或名字'},{id:396,word:'こども',romaji:'kodomo',meaning:'子供；孩子們'},
+{id:397,word:'じかん',romaji:'jikan',meaning:'時間；幾小時'},{id:398,word:'にもつ',romaji:'nimotsu',meaning:'荷物；東西 行李'},{id:399,word:'よみます',romaji:'yomimasu',meaning:'読みます；讀'},{id:400,word:'かきます',romaji:'kakimasu',meaning:'書きます'},{id:401,word:'つめたい',romaji:'tsumetai',meaning:'冷たい；冷 冷淡'},
+{id:402,word:'どうして',romaji:'doushite',meaning:'為什麼'},{id:403,word:'テレビ',romaji:'terebi',meaning:'電視'},{id:404,word:'うえ',romaji:'ue',meaning:'上'},{id:405,word:'した',romaji:'shita',meaning:'下'},{id:406,word:'ひだり',romaji:'hidari',meaning:'左'},
+{id:407,word:'みぎ',romaji:'migi',meaning:'右'},{id:408,word:'まえ',romaji:'mae',meaning:'前'},{id:409,word:'なか',romaji:'naka',meaning:'中；裡面'},{id:410,word:'うしろ',romaji:'ushiro',meaning:'後ろ'},{id:411,word:'そと',romaji:'soto',meaning:'外'},
+{id:412,word:'となり',romaji:'tonari',meaning:'隣；旁邊'},{id:413,word:'あいだ',romaji:'aida',meaning:'間；之間、間隔'},{id:414,word:'デパート',romaji:'depaato',meaning:'百貨公司'},{id:415,word:'かいます',romaji:'kaimasu',meaning:'買います；買'},{id:416,word:'アイスクリーム',romaji:'aisukuriimu',meaning:'冰淇淋'},
+{id:417,word:'エアコン',romaji:'eakon',meaning:'空調'},{id:418,word:'せんせい',romaji:'sensei',meaning:'先生；老師'},{id:419,word:'れいぞうこ',romaji:'reizouko',meaning:'冷蔵庫；冰箱'},{id:420,word:'きって',romaji:'kitte',meaning:'切手；郵票'},{id:421,word:'ふうとう',romaji:'fuutou',meaning:'封筒；信封'},
+{id:422,word:'いくつ',romaji:'ikutsu',meaning:'幾個(年齡或數量)'},{id:423,word:'なんこ',romaji:'nanko',meaning:'幾個(小型具體物品)'},{id:424,word:'ひとつ',romaji:'hitotsu',meaning:'一つ；一個'},{id:425,word:'ふたつ',romaji:'futatsu',meaning:'二つ；二個'},{id:426,word:'みっつ',romaji:'mittsu',meaning:'三つ；三個'},
+{id:427,word:'よっつ',romaji:'yottsu',meaning:'四つ；四個'},{id:428,word:'いつつ',romaji:'itsutsu',meaning:'五つ；五個'},{id:429,word:'むっつ',romaji:'muttsu',meaning:'六つ；六個'},{id:430,word:'ななつ',romaji:'nanatsu',meaning:'七つ；七個'},{id:431,word:'やっつ',romaji:'yattsu',meaning:'八つ；八個'},
+{id:432,word:'ここのつ',romaji:'kokonotsu',meaning:'九つ；九個'},{id:433,word:'とお',romaji:'too',meaning:'十；十個'},{id:434,word:'なるほど',romaji:'naruhodo',meaning:'原來是這樣'},{id:435,word:'がんばって',romaji:'ganbatte',meaning:'頑張って；加油'},{id:436,word:'そして',romaji:'soshite',meaning:'然後 而且(連接前句)'},
+{id:437,word:'かい',romaji:'kai',meaning:'回'},{id:438,word:'ぐらい',romaji:'gurai',meaning:'大約'},{id:439,word:'どのくらい',romaji:'donokurai',meaning:'多久、多長(程度或範圍)'},{id:440,word:'どれくらい',romaji:'dorekunai',meaning:'具體的數量或程度(口語)'},{id:441,word:'かかります',romaji:'kakarimasu',meaning:'花費(時間金錢)'},
+{id:442,word:'にち',romaji:'nichi',meaning:'日'},{id:443,word:'じゅうかん',romaji:'jyuukan',meaning:'週間'},{id:444,word:'かげつ',romaji:'kagetsu',meaning:'~個月'},{id:445,word:'なんじかん',romaji:'nanjikan',meaning:'何時間；多久時間'},{id:446,word:'なんじ',romaji:'nanji',meaning:'何時；幾點'},
+{id:447,word:'いつ',romaji:'itsu',meaning:'什麼時候(+動or名)'},{id:448,word:'まつり',romaji:'matsuri',meaning:'(お)廟會 祭典'},{id:449,word:'にぎやか',romaji:'nigiyaka',meaning:'賑やか(な)；熱鬧 繁華'},{id:450,word:'しずか',romaji:'shizuka',meaning:'静か(な)；安靜'},{id:451,word:'いそがしい',romaji:'isogashii',meaning:'忙しい；忙碌'},
+{id:452,word:'おわる',romaji:'owaru',meaning:'終わる；結束(1動)'},{id:453,word:'おわった',romaji:'owatta',meaning:'已經結束(過去/口語)'},{id:454,word:'おわりました',romaji:'owarimashita',meaning:'已經結束(過去/敬語)'},{id:455,word:'しなくても',romaji:'shinakutemo',meaning:'不做也可以'},{id:456,word:'ざんぎょう',romaji:'zangyou',meaning:'残業；加班'},
+{id:457,word:'いいです',romaji:'iidesu',meaning:'可以 沒問題'},{id:458,word:'たのしい',romaji:'tanoshii',meaning:'楽しい；愉快'},{id:459,word:'せいこう',romaji:'seikou',meaning:'成功'},{id:460,word:'きっと',romaji:'kitto',meaning:'一定 肯定'},{id:461,word:'でしょう',romaji:'deshou',meaning:'肯定會 應該會(推測/肯定句)'},
+{id:462,word:'かんたん',romaji:'kantan',meaning:'簡単；容易(な)'},{id:463,word:'しけん',romaji:'shiken',meaning:'試験；考試'},{id:464,word:'あかるい',romaji:'akarui',meaning:'明るい；明亮的'},{id:465,word:'おととい',romaji:'ototoi',meaning:'一昨日；前天'},{id:466,word:'なる',romaji:'naru',meaning:'變成(1動)'},
+{id:467,word:'なります',romaji:'narimasu',meaning:'變化 轉變(なる敬語)'},{id:468,word:'ある',romaji:'aru',meaning:'有(1動)'},{id:469,word:'ない',romaji:'nai',meaning:'ある否定型 沒有'},{id:470,word:'なかった',romaji:'nakatta',meaning:'ある過去否定型 沒有'},{id:471,word:'くなかった',romaji:'kunakatta',meaning:'くない過去型'},
+{id:472,word:'せんげつ',romaji:'sengetsu',meaning:'先月；上個月'},{id:473,word:'よい',romaji:'yoi',meaning:'好'},{id:474,word:'よかった',romaji:'yokatta',meaning:'よい過去肯定形'},{id:475,word:'よくなかった',romaji:'yokunakatta',meaning:'よい過去否定形'},{id:476,word:'なつやすみ',romaji:'natsuyasumi',meaning:'夏休み；暑假'},
+{id:477,word:'がくせい',romaji:'gakusei',meaning:'学生'},{id:478,word:'こと',romaji:'koto',meaning:'事情、事物、情況'},{id:479,word:'すること',romaji:'surukoto',meaning:'做的事情'},{id:480,word:'いいこと',romaji:'iikoto',meaning:'好的事情'},{id:481,word:'おもしろい',romaji:'omoshiroi',meaning:'面白い；有趣的、好玩的'},
+{id:482,word:'だいじょうぶ',romaji:'daijyoubu',meaning:'大丈夫；沒問題的、可以的'},{id:483,word:'ダンス',romaji:'dansu',meaning:'跳舞'},{id:484,word:'かぞく',romaji:'kazoku',meaning:'家族；家庭'},{id:485,word:'じょうず',romaji:'jyouzu',meaning:'上手；擅長(な)'},{id:486,word:'へた',romaji:'heta',meaning:'下手；笨拙(な)'},
+{id:487,word:'バス',romaji:'basu',meaning:'巴士'},{id:488,word:'すし',romaji:'sushi',meaning:'寿司'},{id:489,word:'はやい',romaji:'hayai',meaning:'速い'},{id:490,word:'いちばん',romaji:'ichiban',meaning:'一番；最..'},{id:491,word:'より',romaji:'yori',meaning:'助詞 表示"比"'},
+{id:492,word:'おそい',romaji:'osoi',meaning:'遅い；慢的'},{id:493,word:'きせつ',romaji:'kisetsu',meaning:'季節'},{id:494,word:'どちらも',romaji:'dochiramo',meaning:'兩個都…'},{id:495,word:'さくら',romaji:'sakura',meaning:'桜'},{id:496,word:'ほう',romaji:'hou',meaning:'方；方向 方面'},
+{id:497,word:'おおい',romaji:'ooi',meaning:'多い；'},{id:498,word:'いつ',romaji:'itsu',meaning:'什麼時候(+動or名)'},{id:499,word:'せがひくい',romaji:'segahikui',meaning:'背が低い；'},{id:500,word:'せがたかい',romaji:'segatakai',meaning:'背が高い；'},{id:501,word:'たばこ',romaji:'tabako',meaning:'香菸'},
+{id:502,word:'すう',romaji:'suu',meaning:'吸う；'},{id:503,word:'すいます',romaji:'suimasu',meaning:'吸うます型'},{id:504,word:'レストラン',romaji:'resutorem',meaning:'餐廳'},{id:505,word:'でる',romaji:'deru',meaning:'離開、出現、發生'},{id:506,word:'でます',romaji:'demasu',meaning:'離開ます型'},
+{id:507,word:'はいる',romaji:'hairu',meaning:'入る；進入、加入、進來'},{id:508,word:'入ります',romaji:'irimasu',meaning:'ます型'},{id:509,word:'こうえん',romaji:'kouen',meaning:'公園'},{id:510,word:'さんぽ',romaji:'sambo',meaning:'散歩'},{id:511,word:'する',romaji:'suru',meaning:'做'}
+];
+
+const shuffleArray = (array) => {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    }
+    return newArr;
+};
+
+// --- 元件: 按鈕 ---
+const Button = React.forwardRef(({ children, onClick, className = "", variant = "primary", disabled = false, autoFocus, type="button", title }, ref) => {
+    const baseStyle = "px-6 py-3 rounded-xl font-bold transition-all duration-200 transform active:scale-95 flex items-center justify-center gap-2 shadow-sm focus:ring-4 focus:ring-indigo-300 outline-none";
+    const variants = {
+        primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200",
+        secondary: "bg-white text-indigo-600 border-2 border-indigo-100 hover:border-indigo-300",
+        danger: "bg-red-50 text-red-600 hover:bg-red-100",
+        success: "bg-green-600 text-white hover:bg-green-700",
+        ghost: "bg-transparent text-gray-500 hover:text-gray-700 shadow-none px-2"
+    };
+    return (
+        <button 
+            ref={ref}
+            type={type}
+            onClick={onClick} 
+            disabled={disabled}
+            autoFocus={autoFocus}
+            title={title}
+            className={`${baseStyle} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+            {children}
+        </button>
+    );
+});
+
+// --- 頁面元件: 五十音表 ---
+const KanaTablePage = ({ onBack }) => {
+    const [activeTab, setActiveTab] = useState('hira'); 
+    const filterKana = (type) => INITIAL_KANA.filter(k => k.type === type && k.group === '清音'); 
+    
+    const renderGrid = (items) => (
+        <div className="grid grid-cols-5 gap-2 md:gap-4 mb-8">
+            {items.map((k, idx) => (
+                <div key={idx} className={`aspect-square flex flex-col items-center justify-center rounded-xl border-2 ${k.char ? 'bg-white border-indigo-50 hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all' : 'border-transparent'}`}>
+                    {k.char && (
+                        <>
+                            <span className="text-2xl md:text-3xl font-bold text-gray-800 font-sans">{k.char}</span>
+                            <span className="text-xs md:text-sm text-gray-400 font-mono mt-1">{k.romaji}</span>
+                        </>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="max-w-4xl mx-auto p-4 animate-slideIn">
+            <div className="flex items-center mb-6">
+                <Button variant="ghost" onClick={onBack}><ChevronLeft /> 返回</Button>
+                <h2 className="text-2xl font-bold ml-2 text-gray-800">五十音練習</h2>
+            </div>
+            <div className="flex gap-4 mb-6 justify-center">
+                <button onClick={() => setActiveTab('hira')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'hira' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-600'}`}>平假名</button>
+                <button onClick={() => setActiveTab('kata')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'kata' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-600'}`}>片假名</button>
+            </div>
+            <div className="bg-white p-6 rounded-3xl shadow-xl border border-indigo-50">
+                {renderGrid(filterKana(activeTab))}
+                <div className="mt-8">
+                    <h3 className="text-lg font-bold text-gray-700 mb-4 border-l-4 border-indigo-500 pl-3">濁音 / 半濁音</h3>
+                    <div className="grid grid-cols-5 gap-2">
+                    {INITIAL_KANA.filter(k => (k.group === '濁音' || k.group === '半濁音') && k.type === (activeTab === 'hira' ? 'hira' : 'kata')).map((k, idx) => (
+                         <div key={idx} className="p-3 bg-gray-50 rounded-lg text-center border border-gray-100"><div className="text-xl font-bold font-sans">{k.char}</div><div className="text-xs text-gray-500">{k.romaji}</div></div>
+                    ))}
+                    </div>
+                </div>
+                <div className="mt-8">
+                    <h3 className="text-lg font-bold text-gray-700 mb-4 border-l-4 border-indigo-500 pl-3">拗音 (部分)</h3>
+                    <div className="grid grid-cols-5 gap-2">
+                    {INITIAL_KANA.filter(k => k.group === '拗音' && k.type === 'hira').map((k, idx) => (
+                         <div key={idx} className="p-3 bg-gray-50 rounded-lg text-center border border-gray-100"><div className="text-xl font-bold font-sans">{k.char}</div><div className="text-xs text-gray-500">{k.romaji}</div></div>
+                    ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- 共用測驗引擎 (Quiz Engine) ---
+const QuizPage = ({ mode, onBack, vocabData }) => {
+    const [gameState, setGameState] = useState('ready');
+    const [questions, setQuestions] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [inputValue, setInputValue] = useState('');
+    const [score, setScore] = useState(0);
+    const [feedback, setFeedback] = useState(null); 
+    const [history, setHistory] = useState([]); 
+
+    const inputRef = useRef(null);
+    const nextBtnRef = useRef(null);
+
+    const TOTAL_QUESTIONS = 20;
+    const SCORE_PER_Q = 5;
+
+    useEffect(() => {
+        if (gameState === 'playing' && !feedback && inputRef.current) setTimeout(() => inputRef.current.focus(), 50);
+    }, [gameState, currentIndex, feedback]);
+
+    useEffect(() => {
+        if (feedback && nextBtnRef.current) setTimeout(() => nextBtnRef.current.focus(), 50);
+    }, [feedback]);
+
+    useEffect(() => {
+        if (gameState === 'ready') generateQuestions();
+    }, [gameState]);
+
+    const generateQuestions = () => {
+        let qList = [];
+        if (mode === 'kana_single') {
+            qList = shuffleArray(KANA_QUIZ_POOL).slice(0, TOTAL_QUESTIONS).map(k => ({ q: k.char, a: k.romaji, hint: '請輸入羅馬拼音', displayA: k.romaji }));
+        } else if (mode === 'kana_combo') {
+            for(let i=0; i<TOTAL_QUESTIONS; i++) {
+                const k1 = KANA_QUIZ_POOL[Math.floor(Math.random() * KANA_QUIZ_POOL.length)];
+                const k2 = KANA_QUIZ_POOL[Math.floor(Math.random() * KANA_QUIZ_POOL.length)];
+                const k3 = KANA_QUIZ_POOL[Math.floor(Math.random() * KANA_QUIZ_POOL.length)];
+                qList.push({ q: `${k1.char}${k2.char}${k3.char}`, a: `${k1.romaji}${k2.romaji}${k3.romaji}`, hint: '請輸入連續拼音', displayA: `${k1.romaji}${k2.romaji}${k3.romaji}` });
+            }
+        } else if (mode === 'vocab_spell') {
+            const pool = vocabData.length > 0 ? shuffleArray(vocabData) : shuffleArray(INITIAL_VOCAB);
+            while(qList.length < TOTAL_QUESTIONS) {
+                pool.forEach(v => {
+                    if(qList.length < TOTAL_QUESTIONS) qList.push({ q: v.word, a: v.romaji, hint: '請輸入羅馬拼音', displayA: v.romaji, meaning: v.meaning });
+                });
+            }
+        } else if (mode === 'vocab_reverse') {
+            const pool = vocabData.length > 0 ? shuffleArray(vocabData) : shuffleArray(INITIAL_VOCAB);
+            while(qList.length < TOTAL_QUESTIONS) {
+                pool.forEach(v => {
+                    if(qList.length < TOTAL_QUESTIONS) qList.push({ q: v.meaning, a: v.word, hint: '請輸入日文單字', displayA: v.word, romaji: v.romaji });
+                });
+            }
+        }
+        setQuestions(qList);
+        setGameState('playing');
+        setCurrentIndex(0);
+        setScore(0);
+        setHistory([]);
+        setInputValue('');
+        setFeedback(null);
+    };
+
+    const handleSubmit = () => {
+        if (!inputValue.trim()) return;
+        const currentQ = questions[currentIndex];
+        const isCorrect = inputValue.trim().toLowerCase() === currentQ.a.toLowerCase();
+        
+        const feedbackData = {
+            type: isCorrect ? 'correct' : 'wrong',
+            msg: isCorrect ? '回答正確！' : '回答錯誤',
+            correctAns: currentQ.displayA,
+            detail: currentQ.meaning ? `字義: ${currentQ.meaning}` : '',
+            userA: inputValue
+        };
+        
+        if (isCorrect) setScore(prev => prev + SCORE_PER_Q);
+        setFeedback(feedbackData);
+    };
+
+    const nextQuestion = () => {
+        setHistory([...history, { ...questions[currentIndex], userAnswer: feedback.userA, isCorrect: feedback.type === 'correct' }]);
+        setFeedback(null);
+        setInputValue('');
+        if (currentIndex < TOTAL_QUESTIONS - 1) setCurrentIndex(prev => prev + 1);
+        else setGameState('finished');
+    };
+
+    const handleInputKeyDown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+    };
+
+    if (gameState === 'finished') {
+        return (
+            <div className="max-w-2xl mx-auto p-6 animate-slideIn text-center">
+                <h2 className="text-3xl font-bold mb-6 text-indigo-800">測驗結果</h2>
+                <div className="bg-white p-8 rounded-3xl shadow-xl mb-8">
+                    <div className="text-6xl font-black text-indigo-600 mb-4">{score} <span className="text-2xl text-gray-400 font-medium">分</span></div>
+                    <div className="h-96 overflow-y-auto border rounded-xl bg-gray-50 p-4 text-left custom-scrollbar">
+                        <table className="w-full">
+                            <thead><tr className="text-gray-400 text-sm border-b"><th className="pb-2 text-left">題目</th><th className="pb-2 text-center">您的回答</th><th className="pb-2 text-right">正確答案</th></tr></thead>
+                            <tbody>{history.map((h, i) => (
+                                <tr key={i} className={`border-b last:border-0 ${h.isCorrect ? 'bg-green-50' : 'bg-red-50'}`}><td className="py-3 font-bold text-gray-800">{h.q}</td><td className={`py-3 text-center ${h.isCorrect ? 'text-green-600 font-bold' : 'text-red-500 line-through'}`}>{h.userAnswer}</td><td className="py-3 text-right text-indigo-600 font-bold">{h.displayA}</td></tr>
+                            ))}</tbody>
+                        </table>
+                    </div>
+                </div>
+                <div className="flex gap-4 justify-center"><Button onClick={onBack} variant="secondary">返回選單</Button><Button onClick={() => setGameState('ready')} variant="primary"><RotateCcw size={18} /> 再玩一次</Button></div>
+            </div>
+        );
+    }
+
+    if (gameState === 'playing' && questions.length > 0) {
+        const q = questions[currentIndex];
+        return (
+            <div className="max-w-2xl mx-auto p-4 md:p-8 animate-slideIn min-h-screen flex flex-col">
+                <div className="flex items-center mb-4"><Button variant="ghost" onClick={onBack}><ChevronLeft /> 退出</Button><div className="flex-1 text-center font-bold text-gray-400">問題 {currentIndex + 1} / {TOTAL_QUESTIONS}</div></div>
+                <div className="flex-1 flex flex-col justify-center">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-center relative overflow-hidden">
+                        <div className="mb-8"><div className="text-sm text-indigo-500 font-bold tracking-widest uppercase mb-2">QUESTION</div><div className="text-5xl md:text-6xl font-black text-gray-800 font-sans leading-tight py-4">{q.q}</div>{mode === 'vocab_spell' && q.meaning && (<div className="text-gray-500 mt-2 text-lg">{q.meaning}</div>)}</div>
+                        <div className="max-w-xs mx-auto relative"><input ref={inputRef} type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleInputKeyDown} placeholder={q.hint} className="w-full text-center text-2xl p-4 border-b-4 border-indigo-100 focus:border-indigo-500 outline-none bg-transparent transition-all placeholder-gray-300" autoComplete="off" /><div className="text-xs text-gray-400 mt-2">輸入答案後按 Enter</div></div>
+                    </div>
+                </div>
+                {feedback && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm transition-all">
+                        <div className={`bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center transform scale-100 animate-bounceIn border-b-8 ${feedback.type === 'correct' ? 'border-green-500' : 'border-red-500'}`}>
+                            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${feedback.type === 'correct' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{feedback.type === 'correct' ? <CheckCircle size={40} /> : <XCircle size={40} />}</div>
+                            <h3 className={`text-2xl font-bold mb-2 ${feedback.type === 'correct' ? 'text-green-700' : 'text-red-700'}`}>{feedback.msg}</h3>
+                            {feedback.type === 'wrong' && (<div className="bg-red-50 rounded-xl p-4 mb-4 border border-red-100"><div className="text-xs text-red-400 uppercase font-bold mb-1">正確答案</div><div className="text-2xl font-black text-gray-800">{feedback.correctAns}</div><div className="text-xs text-gray-400 mt-2">您的回答: {feedback.userA}</div></div>)}
+                            {feedback.detail && (<p className="text-gray-500 mb-6 font-medium bg-gray-50 py-2 rounded-lg">{feedback.detail}</p>)}
+                            <Button ref={nextBtnRef} onClick={nextQuestion} variant={feedback.type === 'correct' ? 'success' : 'danger'} className="w-full py-4 text-lg">下一題 (Enter)</Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    return <div className="text-center p-10">載入中...</div>;
+};
+
+// --- 頁面元件: 單字庫管理 (Cloud Integrated) ---
+const VocabLibraryPage = ({ onBack, vocabList, setVocabList, isFirebaseReady, user }) => {
+    const [newWords, setNewWords] = useState(Array(1).fill({ word: '', romaji: '', meaning: '' }));
+    const [isAdding, setIsAdding] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
+
+    const filteredList = useMemo(() => {
+        return vocabList.filter(v => 
+            v.word.includes(searchTerm) || 
+            v.romaji.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.meaning.includes(searchTerm)
+        );
+    }, [vocabList, searchTerm]);
+
+    const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+    const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
+    const handleSave = async () => {
+        const validWords = newWords.filter(w => w.word.trim() !== '');
+        if (validWords.length === 0) return;
+
+        // 1. 本地更新
+        const localNewWords = validWords.map(w => ({ ...w, id: Date.now() + Math.random(), isCloud: !!user }));
+        setVocabList(prev => [...localNewWords, ...prev]);
+
+        // 2. 雲端同步
+        if (user && isFirebaseReady && window.firebase) {
+            try {
+                const db = window.firebase.firestore();
+                for (const word of validWords) {
+                    await db.collection('user_vocab').add({
+                        ...word,
+                        userId: user.uid,
+                        createdAt: window.firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (error) {
+                console.error("Cloud Save Error:", error);
+                alert("儲存至雲端時發生錯誤：" + error.message);
+            }
+        }
+        
+        setNewWords(Array(1).fill({ word: '', romaji: '', meaning: '' }));
+        setIsAdding(false);
+    };
+
+    const handleDelete = async (id, isCloud) => {
+        if(!confirm('確定要刪除這個單字嗎？')) return;
+        setVocabList(prev => prev.filter(v => v.id !== id));
+        if (isCloud && user) {
+             alert("注意：如果是雲端單字，目前僅從列表移除。若要永久刪除，建議在雲端管理介面操作。(簡易版限制)");
+        }
+    };
+
+    const handleInputChange = (index, field, value) => {
+        const updated = [...newWords];
+        updated[index] = { ...updated[index], [field]: value };
+        setNewWords(updated);
+    };
+
+    return (
+        <div className="max-w-5xl mx-auto p-4 animate-slideIn">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <div className="flex items-center">
+                    <Button variant="ghost" onClick={onBack}><ChevronLeft /> 返回</Button>
+                    <h2 className="text-2xl font-bold ml-2 text-gray-800">我的單字庫</h2>
+                </div>
+                <div className="flex items-center gap-4">
+                     <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                        <input type="text" placeholder="搜尋單字..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border rounded-full focus:ring-2 focus:ring-indigo-300 outline-none w-full md:w-64" />
+                     </div>
+                    <span className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-lg font-bold flex items-center whitespace-nowrap">
+                        單字庫字數: {filteredList.length}
+                    </span>
+                </div>
+            </div>
+
+            <div className={`p-2 rounded-lg text-sm mb-4 flex justify-between items-center ${user ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                <div className="flex items-center gap-2">
+                    <Cloud size={16} />
+                    {user ? <span>雲端已連線 (新單字將自動同步)</span> : <span>離線模式 (僅顯示內建與暫存單字)</span>}
+                </div>
+                {!isAdding && <Button onClick={() => setIsAdding(true)} variant="primary" className="py-2 px-4 text-sm"><Plus size={16} /> 新增單字</Button>}
+            </div>
+
+            {isAdding && (
+                <div className="bg-white p-6 rounded-2xl shadow-lg mb-8 border-2 border-indigo-100">
+                    <h3 className="font-bold text-lg mb-4 text-indigo-600 flex items-center gap-2"><PenTool size={20}/> 新增單字</h3>
+                    <div className="grid grid-cols-12 gap-2 mb-2 font-bold text-xs text-gray-400 px-2"><div className="col-span-3">日文單字</div><div className="col-span-4">羅馬拼音</div><div className="col-span-5">中文解釋</div></div>
+                    {newWords.map((item, idx) => (
+                        <div key={idx} className="grid grid-cols-12 gap-2 mb-2">
+                            <div className="col-span-3"><input className="w-full p-2 border rounded" placeholder="日文" value={item.word} onChange={e => handleInputChange(idx, 'word', e.target.value)} /></div>
+                            <div className="col-span-4"><input className="w-full p-2 border rounded" placeholder="Romaji" value={item.romaji} onChange={e => handleInputChange(idx, 'romaji', e.target.value)} /></div>
+                            <div className="col-span-5"><input className="w-full p-2 border rounded" placeholder="意思" value={item.meaning} onChange={e => handleInputChange(idx, 'meaning', e.target.value)} /></div>
+                        </div>
+                    ))}
+                    <div className="flex justify-end gap-3 mt-4"><Button variant="secondary" onClick={() => setIsAdding(false)}>取消</Button><Button variant="primary" onClick={handleSave}><Save size={18} /> 儲存</Button></div>
+                </div>
+            )}
+
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                <div className="grid grid-cols-12 bg-gray-50 p-4 font-bold text-gray-600 border-b">
+                    <div className="col-span-1">#</div><div className="col-span-3">單字</div><div className="col-span-3">拼音</div><div className="col-span-4">字義</div><div className="col-span-1 text-center">操作</div>
+                </div>
+                <div className="divide-y divide-gray-100">
+                    {paginatedList.map((v, i) => (
+                        <div key={v.id} className="grid grid-cols-12 p-4 hover:bg-indigo-50 transition-colors items-center">
+                            <div className="col-span-1 text-gray-400 font-mono text-sm">{(currentPage-1)*itemsPerPage + i+1}</div>
+                            <div className="col-span-3 font-bold text-lg text-gray-800 font-sans">{v.word}</div>
+                            <div className="col-span-3 text-gray-600 font-mono">{v.romaji}</div>
+                            <div className="col-span-4 text-gray-600">{v.meaning}</div>
+                            <div className="col-span-1 text-center">
+                                <button onClick={() => handleDelete(v.id, v.isCloud)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+                            </div>
+                        </div>
+                    ))}
+                    {paginatedList.length === 0 && <div className="p-8 text-center text-gray-400">沒有找到單字。</div>}
+                </div>
+            </div>
+
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-6">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30"><ChevronLeft /></button>
+                    <span className="font-bold text-gray-600">第 {currentPage} 頁 / 共 {totalPages} 頁</span>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30"><ChevronRight /></button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- 主應用程式 ---
+export default function App() {
+    const [view, setView] = useState('home'); 
+    const [vocabList, setVocabList] = useState([]);
+    const [user, setUser] = useState(null);
+    const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+
+    // 載入腳本 Helper
+    const loadScript = (src) => {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    };
+
+    // Initialize Firebase using Compat Libraries (No Module Bundle issues)
+    const initFirebase = async () => {
+        try {
+            await loadScript("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js");
+            await loadScript("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js");
+            await loadScript("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js");
+
+            if (window.firebase) {
+                // Initialize
+                if (!window.firebase.apps.length) {
+                    window.firebase.initializeApp(firebaseConfig);
+                }
+                
+                // Auth Listener
+                window.firebase.auth().onAuthStateChanged((u) => {
+                    setUser(u);
+                });
+
+                // Auto Login
+                await window.firebase.auth().signInAnonymously();
+                setIsFirebaseReady(true);
+            }
+        } catch (e) {
+            console.error("Firebase Compat Init Failed:", e);
+        }
+    };
+
+    useEffect(() => {
+        setVocabList(INITIAL_VOCAB);
+        initFirebase();
+    }, []);
+
+    // Sync User's Cloud Data
+    useEffect(() => {
+        if (user && isFirebaseReady && window.firebase) {
+            const db = window.firebase.firestore();
+            const unsubscribe = db.collection('user_vocab')
+                .where('userId', '==', user.uid)
+                .orderBy('createdAt', 'desc')
+                .onSnapshot((snapshot) => {
+                    const cloudWords = [];
+                    snapshot.forEach((doc) => {
+                        cloudWords.push({ id: doc.id, ...doc.data(), isCloud: true });
+                    });
+                    
+                    setVocabList(prev => {
+                         const initialOnly = INITIAL_VOCAB; 
+                         return [...cloudWords, ...initialOnly]; 
+                    });
+                }, (error) => {
+                    // Ignore index errors silently or console log
+                    console.log("Snapshot sync status:", error.code); 
+                });
+            return () => unsubscribe();
+        }
+    }, [user, isFirebaseReady]);
+
+    const goHome = () => setView('home');
+
+    // --- 視圖路由 ---
+    
+    if (view === 'home') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-orange-50 to-indigo-50 relative">
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+                    body { font-family: 'Noto Sans TC', 'Noto Sans JP', sans-serif; background-color: #fdfbf7; }
+                    .font-sans { font-family: 'Noto Sans JP', sans-serif; }
+                    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 3px; }
+                `}</style>
+                
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl md:text-5xl font-black text-indigo-900 mb-4 tracking-tight">日本語学習</h1>
+                    <p className="text-gray-500 text-lg">每日累積，積沙成塔</p>
+                    <div className="flex items-center justify-center gap-2 mt-2 text-xs text-gray-400">
+                        {user ? <span className="flex items-center gap-1 text-green-600"><Cloud size={12}/> 雲端已連線</span> : <span className="flex items-center gap-1"><Cloud size={12}/> 連線中...</span>}
+                        <span>• 單字庫: {vocabList.length} 字</span>
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl">
+                    <div onClick={() => setView('kana_menu')} className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer border-2 border-transparent hover:border-pink-300 group">
+                        <div className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span className="text-3xl font-bold text-pink-500">あ</span></div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">五十音練習</h2><p className="text-gray-400">平假名、片假名表與基礎拼音測驗</p>
+                    </div>
+                    <div onClick={() => setView('vocab_menu')} className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer border-2 border-transparent hover:border-indigo-300 group">
+                        <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><Book className="text-indigo-600" size={32} /></div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">單字練習</h2><p className="text-gray-400">建立個人單字庫與字義測驗</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (view === 'kana_menu') {
+        return (
+            <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col justify-center">
+                <Button variant="ghost" onClick={goHome} className="self-start mb-6"><ChevronLeft /> 返回首頁</Button>
+                <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">五十音練習</h2>
+                <div className="space-y-4">
+                    <Button onClick={() => setView('kana_table')} variant="secondary" className="w-full justify-between py-6"><span className="flex items-center gap-3"><LayoutGrid size={20}/> 五十音表</span><span className="text-gray-300">&rarr;</span></Button>
+                    <Button onClick={() => setView('quiz_kana_single')} variant="primary" className="w-full justify-between py-6"><span className="flex items-center gap-3"><PenTool size={20}/> 拼音練習 (單字)</span><span className="bg-white/20 px-2 py-1 rounded text-xs">基礎</span></Button>
+                    <Button onClick={() => setView('quiz_kana_combo')} variant="primary" className="w-full justify-between py-6 bg-indigo-800 hover:bg-indigo-900"><span className="flex items-center gap-3"><Brain size={20}/> 連續拼音 (組合)</span><span className="bg-white/20 px-2 py-1 rounded text-xs">進階</span></Button>
+                    <Button onClick={() => setView('quiz_vocab_spell')} variant="secondary" className="w-full justify-between py-6 border-indigo-200"><span className="flex items-center gap-3"><Volume2 size={20}/> 日文單字拼音</span><span className="text-gray-400 text-xs">從單字庫出題</span></Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (view === 'vocab_menu') {
+        return (
+            <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col justify-center">
+                <Button variant="ghost" onClick={goHome} className="self-start mb-6"><ChevronLeft /> 返回首頁</Button>
+                <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">單字功能</h2>
+                <div className="space-y-4">
+                    <Button onClick={() => setView('vocab_lib')} variant="secondary" className="w-full justify-between py-6"><span className="flex items-center gap-3"><Book size={20}/> 管理單字庫</span><span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">共 {vocabList.length} 字</span></Button>
+                    <Button onClick={() => setView('quiz_vocab_reverse')} variant="primary" className="w-full justify-between py-6"><span className="flex items-center gap-3"><PenTool size={20}/> 字義練習 (填日文)</span><span className="bg-white/20 px-2 py-1 rounded text-xs">測驗</span></Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (view === 'kana_table') return <KanaTablePage onBack={() => setView('kana_menu')} />;
+    if (view === 'vocab_lib') return <VocabLibraryPage onBack={() => setView('vocab_menu')} vocabList={vocabList} setVocabList={setVocabList} isFirebaseReady={isFirebaseReady} user={user} />;
+    
+    if (view === 'quiz_kana_single') return <QuizPage mode="kana_single" onBack={() => setView('kana_menu')} vocabData={vocabList} />;
+    if (view === 'quiz_kana_combo') return <QuizPage mode="kana_combo" onBack={() => setView('kana_menu')} vocabData={vocabList} />;
+    if (view === 'quiz_vocab_spell') return <QuizPage mode="vocab_spell" onBack={() => setView('kana_menu')} vocabData={vocabList} />;
+    if (view === 'quiz_vocab_reverse') return <QuizPage mode="vocab_reverse" onBack={() => setView('vocab_menu')} vocabData={vocabList} />;
+
+    return null;
+}
