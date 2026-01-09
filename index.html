@@ -63,6 +63,68 @@
 
         @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-10px) rotate(5deg); } 100% { transform: translateY(0px) rotate(0deg); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
+
+        /* 消消樂特效 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px) rotate(-5deg); }
+            40% { transform: translateX(8px) rotate(5deg); }
+            60% { transform: translateX(-4px) rotate(-3deg); }
+            80% { transform: translateX(4px) rotate(3deg); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+
+        @keyframes popOut {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        /* 重點：動畫結束後保持 opacity 0 */
+        .animate-pop-out { animation: popOut 0.4s ease-out forwards; pointer-events: none; }
+
+        /* 麻將牌立體效果 */
+        .mahjong-tile {
+            box-shadow: 
+                0 4px 0 #e5e5e5,
+                0 5px 5px rgba(0,0,0,0.1);
+            transition: transform 0.1s ease, background-color 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .mahjong-tile:active {
+            transform: translateY(4px);
+            box-shadow: 
+                0 0 0 #e5e5e5,
+                inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .mahjong-tile.selected {
+            transform: translateY(2px);
+            box-shadow: 
+                0 2px 0 #1e3a8a,
+                0 3px 5px rgba(30, 58, 138, 0.3);
+            border-color: #1e3a8a;
+            color: #1e3a8a;
+            background-color: #eff6ff;
+        }
+        .mahjong-tile.error {
+            border-color: #ef4444;
+            color: #ef4444;
+            background-color: #fef2f2;
+            box-shadow: 0 4px 0 #ef4444;
+        }
+        .mahjong-tile.success {
+            border-color: #10b981;
+            color: #10b981;
+            background-color: #ecfdf5;
+            box-shadow: 0 4px 0 #10b981;
+            z-index: 10;
+        }
+        /* 新增：完全清除狀態，防止動畫重跑 */
+        .mahjong-tile.cleared {
+            opacity: 0;
+            pointer-events: none;
+            cursor: default;
+            border: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -96,7 +158,8 @@
             Home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
             Flower: "M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m0 0v1.5m0-1.5h1.5m-1.5 0H10.5m-3 7.5a4.5 4.5 0 1 0 4.5 4.5M7.5 16.5A4.5 4.5 0 1 1 12 12m-4.5 4.5H9m0 0h1.5m-1.5 0v1.5m0-1.5V15",
             Settings: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
-            RefreshCw: "M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16 M21 21v-5h-5"
+            RefreshCw: "M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16 M21 21v-5h-5",
+            Gamepad2: "M15 6h.01M15 9h.01M4.93 19.07a10 10 0 0 1 1.07-13.41L12 1l5.99 4.66a10 10 0 0 1 1.08 13.41L12 23l-7.07-3.93zM10.5 12a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0z"
         };
 
         const LucideIcon = ({ name, ...props }) => {
@@ -172,6 +235,198 @@
                 </button>
             );
         });
+
+        // --- 頁面: 五十音消消樂 ---
+        const MatchGamePage = ({ onBack }) => {
+            const [tiles, setTiles] = useState([]);
+            const [selectedTiles, setSelectedTiles] = useState([]);
+            const [isChecking, setIsChecking] = useState(false);
+            const [gameStatus, setGameStatus] = useState('playing'); // playing, finished
+
+            useEffect(() => {
+                generateLevel();
+            }, []);
+
+            // 檢查勝利條件 (排除 cleared 的)
+            useEffect(() => {
+                if (tiles.length > 0 && tiles.every(t => t.status === 'cleared' || t.status === 'matched')) {
+                    // 如果全部都消除了 (matched 轉 cleared 需要時間，所以這裡檢查兩種)
+                    // 等待最後一個動畫完成
+                    const activeMatches = tiles.filter(t => t.status === 'matched').length;
+                    if (activeMatches === 0 && tiles.every(t => t.status === 'cleared')) {
+                         setGameStatus('finished');
+                    } else if (tiles.every(t => t.status === 'matched' || t.status === 'cleared')) {
+                         // 還有動畫在跑，稍等一下
+                         const timer = setTimeout(() => setGameStatus('finished'), 500);
+                         return () => clearTimeout(timer);
+                    }
+                }
+            }, [tiles]);
+
+            const generateLevel = () => {
+                const shuffledKana = [...KANA_QUIZ_POOL].sort(() => 0.5 - Math.random());
+                const selected = shuffledKana.slice(0, 8);
+
+                const leftItems = selected.map((item, index) => ({
+                    id: `L-${index}`,
+                    matchId: index,
+                    content: item.char,
+                    type: 'kana',
+                    status: 'idle'
+                }));
+
+                const rightItems = selected.map((item, index) => ({
+                    id: `R-${index}`,
+                    matchId: index,
+                    content: item.romaji,
+                    type: 'romaji',
+                    status: 'idle'
+                }));
+
+                const shuffledLeft = leftItems.sort(() => 0.5 - Math.random());
+                const shuffledRight = rightItems.sort(() => 0.5 - Math.random());
+
+                setTiles([...shuffledLeft, ...shuffledRight]);
+                setSelectedTiles([]);
+                setIsChecking(false);
+                setGameStatus('playing');
+            };
+
+            const handleTileClick = (tileId) => {
+                if (isChecking || gameStatus === 'finished') return;
+                
+                const currentTiles = [...tiles];
+                const tileIndex = currentTiles.findIndex(t => t.id === tileId);
+                const tile = currentTiles[tileIndex];
+
+                // 1. 如果已經消除或正在消除，忽略
+                if (tile.status === 'matched' || tile.status === 'cleared') return;
+
+                // 2. 如果已經被選取，則取消選取
+                if (tile.status === 'selected') {
+                    // 使用 immutable update
+                    setTiles(prev => prev.map(t => t.id === tileId ? { ...t, status: 'idle' } : t));
+                    setSelectedTiles(prev => prev.filter(t => t.id !== tileId));
+                    return;
+                }
+
+                // 3. 限制只能左配右
+                if (selectedTiles.length === 1) {
+                    const firstTile = selectedTiles[0];
+                    if (firstTile.type === tile.type) {
+                        return; // 同邊點擊，忽略
+                    }
+                }
+
+                // 更新選取狀態
+                setTiles(prev => prev.map(t => t.id === tileId ? { ...t, status: 'selected' } : t));
+
+                const newSelected = [...selectedTiles, tile];
+                setSelectedTiles(newSelected);
+
+                if (newSelected.length === 2) {
+                    setIsChecking(true);
+                    checkForMatch(newSelected);
+                }
+            };
+
+            const checkForMatch = (selected) => {
+                const [first, second] = selected;
+                const isMatch = first.matchId === second.matchId;
+
+                setTimeout(() => {
+                    setTiles(prevTiles => {
+                        return prevTiles.map(t => {
+                            if (t.id === first.id || t.id === second.id) {
+                                return { ...t, status: isMatch ? 'matched' : 'error' };
+                            }
+                            return t;
+                        });
+                    });
+
+                    setSelectedTiles([]);
+
+                    if (isMatch) {
+                        // 配對成功：等待動畫結束後，轉為 cleared (完全隱藏)
+                        setTimeout(() => {
+                            setTiles(prevTiles => prevTiles.map(t => 
+                                (t.id === first.id || t.id === second.id) ? { ...t, status: 'cleared' } : t
+                            ));
+                            setIsChecking(false);
+                        }, 400); // 配合 CSS animation 時間
+                    } else {
+                        // 配對失敗：等待晃動結束後重置
+                        setTimeout(() => {
+                            setTiles(prevTiles => prevTiles.map(t => 
+                                (t.id === first.id || t.id === second.id) ? { ...t, status: 'idle' } : t
+                            ));
+                            setIsChecking(false);
+                        }, 500);
+                    }
+                }, 100);
+            };
+
+            const leftColumnTiles = tiles.filter(t => t.type === 'kana');
+            const rightColumnTiles = tiles.filter(t => t.type === 'romaji');
+
+            const Tile = ({ tile }) => (
+                <div 
+                    onClick={() => handleTileClick(tile.id)}
+                    className={`
+                        mahjong-tile relative w-full aspect-[4/3] md:aspect-square flex items-center justify-center 
+                        text-2xl md:text-3xl font-bold rounded-xl border-2 cursor-pointer select-none transition-all duration-200
+                        ${tile.status === 'idle' ? 'bg-white border-stone-200 text-jp-dark hover:-translate-y-1 hover:shadow-lg' : ''}
+                        ${tile.status === 'selected' ? 'selected' : ''}
+                        ${tile.status === 'error' ? 'error animate-shake' : ''}
+                        ${tile.status === 'matched' ? 'success animate-pop-out' : ''} 
+                        ${tile.status === 'cleared' ? 'cleared' : ''} 
+                    `}
+                >
+                    <span className={tile.type === 'kana' ? 'font-jp-serif' : 'font-mono'}>{tile.content}</span>
+                </div>
+            );
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 animate-slideIn min-h-screen flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center">
+                            <Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 退出</Button>
+                            <h2 className="text-2xl font-bold ml-2 text-jp-dark font-jp-serif">五十音消消樂</h2>
+                        </div>
+                        <Button onClick={generateLevel} variant="secondary" className="text-sm px-3 py-1"><LucideIcon name="RefreshCw" size={16}/> 重置</Button>
+                    </div>
+
+                    <div className="flex-1 bg-white/60 backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl border border-stone-200 relative overflow-hidden">
+                        {gameStatus === 'finished' && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 backdrop-blur animate-slideIn">
+                                <LucideIcon name="CheckCircle" size={80} className="text-emerald-500 mb-4 animate-bounce" />
+                                <h3 className="text-4xl font-black text-jp-dark mb-2 font-jp-serif">恭喜完成！</h3>
+                                <p className="text-gray-500 mb-8">所有配對已消除</p>
+                                <div className="flex gap-4">
+                                    <Button onClick={generateLevel} variant="primary">再玩一次</Button>
+                                    <Button onClick={onBack} variant="secondary">返回選單</Button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-4 md:gap-12 h-full">
+                            <div className="flex flex-col gap-3">
+                                <div className="text-center text-sm text-jp-indigo font-bold mb-2 tracking-widest">KANA</div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {leftColumnTiles.map(tile => <Tile key={tile.id} tile={tile} />)}
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <div className="text-center text-sm text-jp-indigo font-bold mb-2 tracking-widest">ROMAJI</div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {rightColumnTiles.map(tile => <Tile key={tile.id} tile={tile} />)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         // --- 頁面: 五十音練習 ---
         const KanaTablePage = ({ onBack }) => {
@@ -753,6 +1008,7 @@
                             <Button onClick={()=>setView('quiz_kana_single')} className="w-full justify-between bg-jp-indigo hover:bg-indigo-900 text-white">拼音練習 (單字) <LucideIcon name="Brain" size={16}/></Button>
                             <Button onClick={()=>setView('quiz_kana_combo')} className="w-full justify-between bg-jp-indigo hover:bg-indigo-900 text-white">連續拼音 (組合) <LucideIcon name="Brain" size={16}/></Button>
                             <Button onClick={()=>setView('quiz_vocab_spell')} className="w-full justify-between bg-jp-red hover:bg-red-800 text-white border-none">日文單字拼音 <LucideIcon name="CheckCircle" size={16}/></Button>
+                            <Button onClick={()=>setView('game_match')} className="w-full justify-between bg-emerald-600 hover:bg-emerald-700 text-white border-none">五十音消消樂 <LucideIcon name="Gamepad2" size={16}/></Button>
                         </div>
                     </div>
                 </div>
@@ -775,6 +1031,7 @@
 
             if (view === 'kana_table') return <KanaTablePage onBack={()=>setView('kana_menu')} />;
             if (view === 'vocab_lib') return <VocabLibraryPage onBack={()=>setView('vocab_menu')} vocabList={vocabList} setVocabList={setVocabList} user={user} syncId={syncId} />;
+            if (view === 'game_match') return <MatchGamePage onBack={()=>setView('kana_menu')} />;
             
             // 路由處理
             const isQuiz = view.startsWith('quiz_');
