@@ -34,7 +34,7 @@
         }
     </script>
 
-    <!-- 4. 載入 Firebase SDK (Compat 版本 - 適合單一 HTML) -->
+    <!-- 4. 載入 Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -44,7 +44,7 @@
         
         body {
             font-family: 'Noto Sans TC', 'Noto Sans JP', sans-serif;
-            background-color: #fcfaf2; /* 和紙色 */
+            background-color: #fcfaf2;
             color: #2c2c2c;
             -webkit-font-smoothing: antialiased;
             background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
@@ -53,17 +53,14 @@
         
         .font-jp-serif { font-family: 'Noto Serif JP', serif; }
         
-        /* 自訂捲軸 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #fcfaf2; }
         ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
         
-        /* 動畫效果 */
         @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slideIn { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        /* 櫻花飄落動畫 */
         @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-10px) rotate(5deg); } 100% { transform: translateY(0px) rotate(0deg); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
     </style>
@@ -97,7 +94,9 @@
             Loader2: "M21 12a9 9 0 1 1-6.219-8.56", 
             WifiOff: "M1 1l22 22 M16.72 11.06A10.94 10.94 0 0 1 19 12.55 M5 12.55a10.94 10.94 0 0 1 5.17-2.39 M10.71 5.05A16 16 0 0 1 22.58 9 M1.42 9a15.91 15.91 0 0 1 4.7-2.88 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01",
             Home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-            Flower: "M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m0 0v1.5m0-1.5h1.5m-1.5 0H10.5m-3 7.5a4.5 4.5 0 1 0 4.5 4.5M7.5 16.5A4.5 4.5 0 1 1 12 12m-4.5 4.5H9m0 0h1.5m-1.5 0v1.5m0-1.5V15" // 模擬花朵
+            Flower: "M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m0 0v1.5m0-1.5h1.5m-1.5 0H10.5m-3 7.5a4.5 4.5 0 1 0 4.5 4.5M7.5 16.5A4.5 4.5 0 1 1 12 12m-4.5 4.5H9m0 0h1.5m-1.5 0v1.5m0-1.5V15",
+            Settings: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
+            RefreshCw: "M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16 M21 21v-5h-5"
         };
 
         const LucideIcon = ({ name, ...props }) => {
@@ -156,7 +155,7 @@
 
         const KANA_QUIZ_POOL = INITIAL_KANA.filter(k => k.char !== '');
 
-        // --- 元件: Button (更新樣式) ---
+        // --- 元件: Button ---
         const Button = React.forwardRef(({ children, onClick, className = "", variant = "primary", disabled = false, autoFocus, title }, ref) => {
             const baseStyle = "px-4 py-2 md:px-6 md:py-3 rounded-lg font-bold transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 outline-none select-none tracking-wide";
             const variants = {
@@ -321,7 +320,7 @@
         };
 
         // --- 單字庫頁面 (CSV 管理) ---
-        const VocabLibraryPage = ({ onBack, vocabList, setVocabList, user }) => {
+        const VocabLibraryPage = ({ onBack, vocabList, setVocabList, user, syncId }) => {
             const [isAdding, setIsAdding] = useState(false);
             const [newWord, setNewWord] = useState({ word: '', romaji: '', meaning: '' });
             const [searchTerm, setSearchTerm] = useState('');
@@ -345,7 +344,7 @@
                 link.click();
             };
 
-            // CSV 匯入 (包含重複檢查)
+            // CSV 匯入
             const handleFileChange = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -356,7 +355,6 @@
                     const text = event.target.result;
                     const lines = text.split('\n');
                     
-                    // 建立現有單字 Set 用於快速比對
                     const existingWords = new Set(vocabList.map(v => v.word));
                     let newItems = [];
                     let duplicateCount = 0;
@@ -373,19 +371,16 @@
                             
                             word = word?.trim();
                             if (word && romaji) {
-                                // 檢查重複
                                 if (existingWords.has(word)) {
                                     duplicateCount++;
                                     continue;
                                 }
-
                                 newItems.push({
                                     word: word,
                                     romaji: romaji.trim(),
                                     meaning: (meaning || '').trim(),
-                                    id: Date.now() + Math.random() + i // 暫時ID (離線用)
+                                    id: Date.now() + Math.random() + i 
                                 });
-                                // 加入 Set 避免同一個 CSV 內也有重複
                                 existingWords.add(word);
                             }
                         }
@@ -398,7 +393,6 @@
                          return;
                     }
 
-                    // 如果有連線 Firebase，上傳資料 (強制等待完成)
                     if (user && window.firebase) {
                         try {
                             const db = firebase.firestore();
@@ -414,7 +408,7 @@
                                     word: item.word,
                                     romaji: item.romaji,
                                     meaning: item.meaning,
-                                    userId: user.uid,
+                                    userId: syncId || user.uid, // 使用 SyncID
                                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                                 });
                                 batchCount++;
@@ -436,11 +430,9 @@
                         } catch(e) {
                             console.error(e);
                             alert("匯入雲端失敗，請檢查網路。錯誤: " + e.message);
-                            // 失敗時才手動更新本地列表作為備案
                             setVocabList(prev => [...newItems, ...prev]);
                         }
                     } else {
-                        // 離線模式手動更新
                         setVocabList(prev => [...newItems, ...prev]);
                         alert(`已匯入 ${newItems.length} 筆單字 (離線模式)\n(已跳過 ${duplicateCount} 筆重複)`);
                     }
@@ -454,15 +446,13 @@
             const handleAdd = async () => {
                 if(!newWord.word) return;
                 
-                // 檢查是否重複
                 if (vocabList.some(v => v.word === newWord.word)) {
                     alert('單字庫中已經有這個單字了！');
                     return;
                 }
 
-                const tempItem = { ...newWord, id: Date.now(), userId: user?.uid };
+                const tempItem = { ...newWord, id: Date.now(), userId: syncId || user?.uid };
                 
-                // 如果是離線，手動更新 UI；如果是連線，等待 Snapshot 更新
                 if(!user) {
                     setVocabList(prev => [tempItem, ...prev]);
                 }
@@ -470,7 +460,9 @@
                 if(user && window.firebase) {
                     try {
                         await firebase.firestore().collection('user_vocab').add({
-                            ...newWord, userId: user.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            ...newWord, 
+                            userId: syncId || user.uid, // 使用 SyncID
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     } catch(e) { console.error(e); }
                 }
@@ -567,6 +559,10 @@
             const [user, setUser] = useState(null);
             const [vocabList, setVocabList] = useState([]);
             const [dbStatus, setDbStatus] = useState('init'); // init, connecting, connected, offline
+            const [showSyncModal, setShowSyncModal] = useState(false);
+            const [syncId, setSyncId] = useState(localStorage.getItem('japanese_app_sync_id') || '');
+            const [tempSyncId, setTempSyncId] = useState('');
+            const [isMigrating, setIsMigrating] = useState(false);
 
             // 監聽 Firebase 登入狀態
             useEffect(() => {
@@ -591,12 +587,17 @@
                 }
             }, []);
 
-            // 監聽雲端資料 - 移除 orderBy 以避免 Index 問題
+            // 監聽雲端資料 - 使用 syncId 或 user.uid
             useEffect(() => {
                 if (user && window.firebase) {
                     const db = window.firebase.firestore();
+                    // 如果有設定 syncId 就用 syncId，否則用匿名登入的 uid
+                    const targetId = syncId || user.uid;
+                    
+                    console.log("Listening to data for:", targetId);
+
                     const unsubscribe = db.collection('user_vocab')
-                        .where('userId', '==', user.uid)
+                        .where('userId', '==', targetId)
                         .onSnapshot(snapshot => {
                             const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                             list.sort((a, b) => {
@@ -610,7 +611,56 @@
                         });
                     return () => unsubscribe();
                 }
-            }, [user]);
+            }, [user, syncId]);
+
+            // 處理同步 ID 設定
+            const handleSaveSyncId = async (shouldMigrate) => {
+                if (!tempSyncId.trim()) {
+                    alert("請輸入有效的 ID");
+                    return;
+                }
+                
+                const newId = tempSyncId.trim();
+                const oldId = syncId || user?.uid;
+
+                if (shouldMigrate && user && window.firebase) {
+                    setIsMigrating(true);
+                    try {
+                        const db = window.firebase.firestore();
+                        // 1. 抓出舊 ID 的所有資料
+                        const snapshot = await db.collection('user_vocab').where('userId', '==', oldId).get();
+                        
+                        if (snapshot.empty) {
+                            alert("目前沒有資料可以轉移。");
+                        } else {
+                            // 2. 批次更新 (Firestore 批次上限 500)
+                            const batch = db.batch();
+                            snapshot.docs.forEach(doc => {
+                                batch.update(doc.ref, { userId: newId });
+                            });
+                            await batch.commit();
+                            alert(`已成功轉移 ${snapshot.size} 筆資料到新 ID！`);
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        alert("轉移失敗：" + e.message);
+                        setIsMigrating(false);
+                        return; // 失敗不切換 ID
+                    }
+                    setIsMigrating(false);
+                }
+
+                // 儲存並切換 ID
+                localStorage.setItem('japanese_app_sync_id', newId);
+                setSyncId(newId);
+                setShowSyncModal(false);
+                alert(`同步 ID 已設定為：${newId}\n請在其他裝置輸入相同 ID 即可同步。`);
+            };
+
+            const openSyncModal = () => {
+                setTempSyncId(syncId || '');
+                setShowSyncModal(true);
+            };
 
             if (view === 'home') return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -619,12 +669,17 @@
                     <div className="absolute bottom-20 right-20 text-jp-pink/20 animate-float" style={{animationDelay:'2s'}}><LucideIcon name="Flower" size={80} /></div>
                     <div className="absolute top-40 right-10 text-jp-pink/10 animate-float" style={{animationDelay:'4s'}}><LucideIcon name="Flower" size={40} /></div>
                     
+                    {/* 右上角同步設定按鈕 */}
+                    <button onClick={openSyncModal} className="absolute top-6 right-6 p-2 bg-white/80 backdrop-blur rounded-full shadow-md text-jp-indigo hover:bg-jp-indigo hover:text-white transition-all z-20" title="同步設定">
+                        <LucideIcon name="Settings" size={24} />
+                    </button>
+
                     <div className="z-10 text-center">
                         <div className="mb-2 text-jp-red font-bold tracking-[0.2em] text-sm uppercase">Japanese Learning System</div>
                         <h1 className="text-5xl font-black text-jp-dark mb-4 font-jp-serif">日本語学習</h1>
                         <p className="text-gray-500 mb-8 font-jp-serif">日々の積み重ねが、未来を創る。</p>
                         
-                        {/* 資料庫連線狀態顯示 (移除 ID) */}
+                        {/* 資料庫連線狀態顯示 */}
                         <div className="mb-12 inline-flex items-center gap-2 px-5 py-2 bg-white/80 backdrop-blur rounded-full shadow-sm text-sm border border-stone-200">
                             {dbStatus === 'connecting' && <><LucideIcon name="Loader2" className="animate-spin text-jp-indigo" size={16}/> <span className="text-gray-600">連線資料庫中...</span></>}
                             {dbStatus === 'connected' && <><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div> <span className="text-gray-700 font-medium">資料庫已連線</span></>}
@@ -648,6 +703,42 @@
                     </div>
                     
                     <div className="absolute bottom-6 text-gray-300 text-xs font-mono">Design by Japanese Learning App</div>
+
+                    {/* 同步設定 Modal */}
+                    {showSyncModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-slideIn">
+                            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full relative">
+                                <button onClick={()=>setShowSyncModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><LucideIcon name="XCircle" size={24}/></button>
+                                <h3 className="text-2xl font-bold mb-4 font-jp-serif text-jp-dark flex items-center gap-2"><LucideIcon name="Settings" /> 同步設定</h3>
+                                <div className="mb-6 text-sm text-gray-600">
+                                    <p className="mb-2">由於目前使用匿名登入，不同裝置的資料預設是不互通的。</p>
+                                    <p>請設定一個自訂的 <strong>「同步 ID」</strong> (如手機號碼)，並在所有裝置輸入相同的 ID 即可同步資料。</p>
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-xs font-bold text-jp-indigo mb-1">您的同步 ID</label>
+                                    <input 
+                                        type="text" 
+                                        value={tempSyncId} 
+                                        onChange={e=>setTempSyncId(e.target.value)} 
+                                        placeholder="請輸入 ID (例: my-phone-number)"
+                                        className="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-jp-indigo outline-none font-mono text-lg"
+                                    />
+                                    {syncId && <div className="mt-2 text-xs text-emerald-600 flex items-center gap-1"><LucideIcon name="CheckCircle" size={12}/> 目前使用中: {syncId}</div>}
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    <Button onClick={()=>handleSaveSyncId(false)} disabled={isMigrating} className="w-full justify-center">
+                                        {isMigrating ? '處理中...' : (syncId ? '切換 ID (不轉移資料)' : '設定 ID')}
+                                    </Button>
+                                    {/* 只有在目前有資料且尚未設定 ID 時才顯示轉移選項，或者更換 ID 時 */}
+                                    {vocabList.length > 0 && (
+                                        <Button onClick={()=>handleSaveSyncId(true)} variant="secondary" disabled={isMigrating} className="w-full justify-center">
+                                            <LucideIcon name="RotateCcw" size={16}/> 設定並轉移現有資料 ({vocabList.length}筆)
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
 
@@ -683,7 +774,7 @@
             );
 
             if (view === 'kana_table') return <KanaTablePage onBack={()=>setView('kana_menu')} />;
-            if (view === 'vocab_lib') return <VocabLibraryPage onBack={()=>setView('vocab_menu')} vocabList={vocabList} setVocabList={setVocabList} user={user} />;
+            if (view === 'vocab_lib') return <VocabLibraryPage onBack={()=>setView('vocab_menu')} vocabList={vocabList} setVocabList={setVocabList} user={user} syncId={syncId} />;
             
             // 路由處理
             const isQuiz = view.startsWith('quiz_');
