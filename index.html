@@ -14,6 +14,25 @@
     
     <!-- 3. 載入 Tailwind CSS (樣式) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'jp-red': '#b91c1c',     /* 茜色 */
+                        'jp-indigo': '#1e3a8a',  /* 藍染 */
+                        'jp-cream': '#fcfaf2',   /* 和紙 */
+                        'jp-dark': '#2c2c2c',    /* 墨色 */
+                        'jp-pink': '#fbcfe8',    /* 櫻色 */
+                    },
+                    fontFamily: {
+                        'serif': ['Noto Serif JP', 'Noto Serif TC', 'serif'],
+                        'sans': ['Noto Sans JP', 'Noto Sans TC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
 
     <!-- 4. 載入 Firebase SDK (Compat 版本 - 適合單一 HTML) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -21,26 +40,32 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+JP:wght@600;900&display=swap');
         
         body {
             font-family: 'Noto Sans TC', 'Noto Sans JP', sans-serif;
-            background-color: #fdfbf7;
-            color: #2d3748;
+            background-color: #fcfaf2; /* 和紙色 */
+            color: #2c2c2c;
             -webkit-font-smoothing: antialiased;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
         }
         
-        .font-sans { font-family: 'Noto Sans JP', sans-serif; }
+        .font-jp-serif { font-family: 'Noto Serif JP', serif; }
         
         /* 自訂捲軸 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-track { background: #fcfaf2; }
         ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
         
         /* 動畫效果 */
         @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slideIn { animation: slideIn 0.4s ease-out; }
+        .animate-slideIn { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* 櫻花飄落動畫 */
+        @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-10px) rotate(5deg); } 100% { transform: translateY(0px) rotate(0deg); } }
+        .animate-float { animation: float 6s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -49,14 +74,13 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 內建 SVG Icons (解決 CDN 報錯問題) ---
+        // --- 內建 SVG Icons ---
         const Icon = ({ path, className = "", size = 24 }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 <path d={path} />
             </svg>
         );
 
-        // 定義所有用到的圖示路徑
         const ICONS = {
             Book: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z",
             ChevronLeft: "M15 18l-6-6 6-6",
@@ -70,18 +94,19 @@
             XCircle: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
             Search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.35-4.35",
             Cloud: "M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z",
-            Loader2: "M21 12a9 9 0 1 1-6.219-8.56", // 需配合 animate-spin class
+            Loader2: "M21 12a9 9 0 1 1-6.219-8.56", 
             WifiOff: "M1 1l22 22 M16.72 11.06A10.94 10.94 0 0 1 19 12.55 M5 12.55a10.94 10.94 0 0 1 5.17-2.39 M10.71 5.05A16 16 0 0 1 22.58 9 M1.42 9a15.91 15.91 0 0 1 4.7-2.88 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01",
+            Home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+            Flower: "M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m0 0v1.5m0-1.5h1.5m-1.5 0H10.5m-3 7.5a4.5 4.5 0 1 0 4.5 4.5M7.5 16.5A4.5 4.5 0 1 1 12 12m-4.5 4.5H9m0 0h1.5m-1.5 0v1.5m0-1.5V15" // 模擬花朵
         };
 
-        // 簡單的圖示元件封裝
         const LucideIcon = ({ name, ...props }) => {
             const path = ICONS[name];
-            if (!path) return <span>?</span>;
+            if (!path) return null;
             return <Icon path={path} {...props} />;
         };
 
-        // --- Firebase 設定 (移至組件外) ---
+        // --- Firebase 設定 ---
         const firebaseConfig = {
             apiKey: "AIzaSyCBOmSZTrEqti7TnCFaSfZlXCmjVqY7mn8",
             authDomain: "japanese-2faca.firebaseapp.com",
@@ -92,17 +117,11 @@
             measurementId: "G-NVRF6XDB83"
         };
 
-        // 初始化 Firebase 防止重複初始化
         if (window.firebase && !window.firebase.apps.length) {
-            try {
-                window.firebase.initializeApp(firebaseConfig);
-                console.log("Firebase initialized successfully");
-            } catch(e) {
-                console.error("Firebase init failed:", e);
-            }
+            try { window.firebase.initializeApp(firebaseConfig); } catch(e) { console.error(e); }
         }
 
-        // --- 五十音資料 (固定資料) ---
+        // --- 資料 ---
         const INITIAL_KANA = [
             { char: 'あ', romaji: 'a', type: 'hira', group: '清音' }, { char: 'い', romaji: 'i', type: 'hira', group: '清音' }, { char: 'う', romaji: 'u', type: 'hira', group: '清音' }, { char: 'え', romaji: 'e', type: 'hira', group: '清音' }, { char: 'お', romaji: 'o', type: 'hira', group: '清音' },
             { char: 'か', romaji: 'ka', type: 'hira', group: '清音' }, { char: 'き', romaji: 'ki', type: 'hira', group: '清音' }, { char: 'く', romaji: 'ku', type: 'hira', group: '清音' }, { char: 'け', romaji: 'ke', type: 'hira', group: '清音' }, { char: 'こ', romaji: 'ko', type: 'hira', group: '清音' },
@@ -137,16 +156,16 @@
 
         const KANA_QUIZ_POOL = INITIAL_KANA.filter(k => k.char !== '');
 
-        // --- 元件: Button ---
+        // --- 元件: Button (更新樣式) ---
         const Button = React.forwardRef(({ children, onClick, className = "", variant = "primary", disabled = false, autoFocus, title }, ref) => {
-            const baseStyle = "px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold transition-all duration-200 transform active:scale-95 flex items-center justify-center gap-2 shadow-sm focus:ring-4 focus:ring-indigo-300 outline-none select-none";
+            const baseStyle = "px-4 py-2 md:px-6 md:py-3 rounded-lg font-bold transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 outline-none select-none tracking-wide";
             const variants = {
-                primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200",
-                secondary: "bg-white text-indigo-600 border-2 border-indigo-100 hover:border-indigo-300",
-                danger: "bg-red-50 text-red-600 hover:bg-red-100",
-                success: "bg-green-600 text-white hover:bg-green-700",
-                ghost: "bg-transparent text-gray-500 hover:text-gray-700 shadow-none px-2",
-                light: "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                primary: "bg-jp-indigo text-white hover:bg-indigo-900 shadow-md hover:shadow-lg border border-transparent",
+                secondary: "bg-white text-jp-indigo border-2 border-jp-indigo hover:bg-indigo-50",
+                danger: "bg-white text-jp-red border-2 border-jp-red hover:bg-red-50",
+                success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md",
+                ghost: "bg-transparent text-gray-500 hover:text-jp-indigo shadow-none px-2",
+                light: "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
             };
             return (
                 <button ref={ref} onClick={onClick} disabled={disabled} autoFocus={autoFocus} title={title} className={`${baseStyle} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -161,26 +180,26 @@
             const renderGrid = (type) => (
                 <div className="grid grid-cols-5 gap-2 md:gap-4 mb-6">
                     {INITIAL_KANA.filter(k => k.type === type && k.group === '清音').slice(0, 46).map((k, idx) => (
-                        <div key={idx} className={`aspect-square flex flex-col items-center justify-center rounded-xl border-2 ${k.char ? 'bg-white border-indigo-50 hover:border-indigo-300 shadow-sm cursor-pointer' : 'border-transparent'} transition-all`}>
-                            {k.char && <><span className="text-2xl md:text-3xl font-bold text-gray-800 font-sans">{k.char}</span><span className="text-xs md:text-sm text-gray-400 font-mono mt-1">{k.romaji}</span></>}
+                        <div key={idx} className={`aspect-square flex flex-col items-center justify-center rounded-lg border ${k.char ? 'bg-white border-stone-200 hover:border-jp-indigo hover:shadow-md cursor-pointer' : 'border-transparent'} transition-all duration-300`}>
+                            {k.char && <><span className="text-2xl md:text-3xl font-jp-serif text-jp-dark">{k.char}</span><span className="text-xs md:text-sm text-gray-400 font-mono mt-1">{k.romaji}</span></>}
                         </div>
                     ))}
                 </div>
             );
             return (
                 <div className="max-w-4xl mx-auto p-4 animate-slideIn">
-                    <div className="flex items-center mb-6"><Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 返回</Button><h2 className="text-2xl font-bold ml-2 text-gray-800">五十音練習</h2></div>
+                    <div className="flex items-center mb-6"><Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 返回</Button><h2 className="text-2xl font-bold ml-2 text-jp-dark font-jp-serif">五十音練習</h2></div>
                     <div className="flex gap-4 mb-6 justify-center">
-                        <button onClick={() => setActiveTab('hira')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'hira' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-600'}`}>平假名</button>
-                        <button onClick={() => setActiveTab('kata')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'kata' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-600'}`}>片假名</button>
+                        <button onClick={() => setActiveTab('hira')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'hira' ? 'bg-jp-indigo text-white shadow-lg' : 'bg-white text-gray-500 border border-gray-200'}`}>平假名</button>
+                        <button onClick={() => setActiveTab('kata')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'kata' ? 'bg-jp-indigo text-white shadow-lg' : 'bg-white text-gray-500 border border-gray-200'}`}>片假名</button>
                     </div>
-                    <div className="bg-white p-6 rounded-3xl shadow-xl border border-indigo-50">
+                    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-stone-200">
                         {renderGrid(activeTab)}
-                        <div className="mt-8"><h3 className="text-lg font-bold text-gray-700 mb-4 border-l-4 border-indigo-500 pl-3">濁音 / 半濁音</h3>
-                            <div className="grid grid-cols-5 gap-2">{INITIAL_KANA.filter(k => (k.group === '濁音' || k.group === '半濁音') && k.type === (activeTab === 'hira' ? 'hira' : 'kata')).map((k, idx) => (<div key={idx} className="p-3 bg-gray-50 rounded-lg text-center border border-gray-100"><div className="text-xl font-bold font-sans">{k.char}</div><div className="text-xs text-gray-500">{k.romaji}</div></div>))}</div>
+                        <div className="mt-8"><h3 className="text-lg font-bold text-jp-dark mb-4 border-l-4 border-jp-indigo pl-3 font-jp-serif">濁音 / 半濁音</h3>
+                            <div className="grid grid-cols-5 gap-2">{INITIAL_KANA.filter(k => (k.group === '濁音' || k.group === '半濁音') && k.type === (activeTab === 'hira' ? 'hira' : 'kata')).map((k, idx) => (<div key={idx} className="p-3 bg-white rounded border border-stone-200 text-center"><div className="text-xl font-bold font-jp-serif text-jp-dark">{k.char}</div><div className="text-xs text-gray-500">{k.romaji}</div></div>))}</div>
                         </div>
-                        <div className="mt-8"><h3 className="text-lg font-bold text-gray-700 mb-4 border-l-4 border-indigo-500 pl-3">拗音 (部分)</h3>
-                            <div className="grid grid-cols-5 gap-2">{INITIAL_KANA.filter(k => k.group === '拗音' && k.type === 'hira').map((k, idx) => (<div key={idx} className="p-3 bg-gray-50 rounded-lg text-center border border-gray-100"><div className="text-xl font-bold font-sans">{k.char}</div><div className="text-xs text-gray-500">{k.romaji}</div></div>))}</div>
+                        <div className="mt-8"><h3 className="text-lg font-bold text-jp-dark mb-4 border-l-4 border-jp-indigo pl-3 font-jp-serif">拗音 (部分)</h3>
+                            <div className="grid grid-cols-5 gap-2">{INITIAL_KANA.filter(k => k.group === '拗音' && k.type === 'hira').map((k, idx) => (<div key={idx} className="p-3 bg-white rounded border border-stone-200 text-center"><div className="text-xl font-bold font-jp-serif text-jp-dark">{k.char}</div><div className="text-xs text-gray-500">{k.romaji}</div></div>))}</div>
                         </div>
                     </div>
                 </div>
@@ -208,7 +227,7 @@
                 const pool = vocabData.length > 0 ? vocabData : []; 
                 
                 if ((mode.includes('vocab') && pool.length === 0)) {
-                    alert("單字庫是空的！請先到「單字練習」頁面匯入 CSV 單字。\n(若已匯入請稍待雲端同步)");
+                    alert("單字庫是空的！請先到「管理單字庫」匯入 CSV 單字。\n(若已匯入請稍待雲端同步)");
                     onBack();
                     return;
                 }
@@ -260,13 +279,13 @@
 
             if (gameState === 'finished') return (
                 <div className="max-w-2xl mx-auto p-6 text-center animate-slideIn">
-                    <h2 className="text-3xl font-bold mb-6 text-indigo-800">測驗結果</h2>
-                    <div className="bg-white p-8 rounded-3xl shadow-xl mb-8">
-                        <div className="text-6xl font-black text-indigo-600 mb-4">{score} <span className="text-2xl text-gray-400 font-medium">分</span></div>
+                    <h2 className="text-3xl font-bold mb-6 text-jp-indigo font-jp-serif">測驗結果</h2>
+                    <div className="bg-white p-8 rounded-xl shadow-xl mb-8 border border-stone-200">
+                        <div className="text-6xl font-black text-jp-indigo mb-4">{score} <span className="text-2xl text-gray-400 font-medium">分</span></div>
                         <div className="h-96 overflow-y-auto border rounded-xl bg-gray-50 p-4 text-left">
                             <table className="w-full">
                                 <thead><tr className="text-gray-400 text-sm border-b"><th className="pb-2 text-left">題目</th><th className="pb-2 text-center">您的回答</th><th className="pb-2 text-right">正確答案</th></tr></thead>
-                                <tbody>{history.map((h,i) => (<tr key={i} className={`border-b last:border-0 ${h.isCorrect?'bg-green-50':'bg-red-50'}`}><td className="py-3 font-bold text-gray-800">{h.q}</td><td className={`py-3 text-center ${h.isCorrect?'text-green-600 font-bold':'text-red-500 line-through'}`}>{h.userAnswer}</td><td className="py-3 text-right text-indigo-600 font-bold">{h.displayA}</td></tr>))}</tbody>
+                                <tbody>{history.map((h,i) => (<tr key={i} className={`border-b last:border-0 ${h.isCorrect?'bg-emerald-50':'bg-red-50'}`}><td className="py-3 font-bold text-gray-800">{h.q}</td><td className={`py-3 text-center ${h.isCorrect?'text-emerald-600 font-bold':'text-jp-red line-through'}`}>{h.userAnswer}</td><td className="py-3 text-right text-jp-indigo font-bold">{h.displayA}</td></tr>))}</tbody>
                             </table>
                         </div>
                     </div>
@@ -278,18 +297,18 @@
                 const q = questions[currentIndex];
                 return (
                     <div className="max-w-xl mx-auto p-6 min-h-screen flex flex-col animate-slideIn">
-                        <div className="flex items-center mb-4"><Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 退出</Button><div className="flex-1 text-center font-bold text-gray-400">問題 {currentIndex + 1} / 20</div></div>
-                        <div className="bg-white rounded-3xl shadow-2xl p-10 text-center relative flex-1 flex flex-col justify-center">
-                            <div className="text-5xl font-black text-gray-800 font-sans mb-4">{q.q}</div>
+                        <div className="flex items-center mb-4"><Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 退出</Button><div className="flex-1 text-center font-bold text-gray-400 font-jp-serif">問題 {currentIndex + 1} / 20</div></div>
+                        <div className="bg-white rounded-xl shadow-2xl p-10 text-center relative flex-1 flex flex-col justify-center border border-stone-100">
+                            <div className="text-6xl font-black text-jp-dark font-jp-serif mb-6">{q.q}</div>
                             {mode === 'vocab_spell' && <div className="text-gray-500 mb-8">{q.meaning}</div>}
-                            <input ref={inputRef} type="text" value={inputValue} onChange={e=>setInputValue(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSubmit()} placeholder={q.hint} className="w-full text-center text-2xl p-4 border-b-4 border-indigo-100 focus:border-indigo-500 outline-none bg-transparent" autoComplete="off" />
+                            <input ref={inputRef} type="text" value={inputValue} onChange={e=>setInputValue(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSubmit()} placeholder={q.hint} className="w-full text-center text-2xl p-4 border-b-2 border-stone-200 focus:border-jp-indigo outline-none bg-transparent transition-colors" autoComplete="off" />
                         </div>
                         {feedback && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm">
-                                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
-                                    <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${feedback.type === 'correct' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{feedback.type === 'correct' ? <LucideIcon name="CheckCircle" size={40} /> : <LucideIcon name="XCircle" size={40} />}</div>
-                                    <h3 className="text-2xl font-bold mb-2">{feedback.msg}</h3>
-                                    {feedback.type === 'wrong' && <div className="bg-red-50 p-4 rounded-xl mb-4"><div className="text-xs text-red-400 font-bold">正確答案</div><div className="text-2xl font-black text-gray-800">{feedback.correctAns}</div>{feedback.romaji && <div className="text-sm text-indigo-500 font-mono mt-1">{feedback.romaji}</div>}</div>}
+                                <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center border-t-4 border-jp-indigo">
+                                    <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${feedback.type === 'correct' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-jp-red'}`}>{feedback.type === 'correct' ? <LucideIcon name="CheckCircle" size={40} /> : <LucideIcon name="XCircle" size={40} />}</div>
+                                    <h3 className="text-2xl font-bold mb-2 font-jp-serif">{feedback.msg}</h3>
+                                    {feedback.type === 'wrong' && <div className="bg-stone-50 p-4 rounded-lg mb-4 border border-stone-100"><div className="text-xs text-gray-500 font-bold mb-1">正確答案</div><div className="text-3xl font-black text-jp-dark font-jp-serif">{feedback.correctAns}</div>{feedback.romaji && <div className="text-sm text-jp-indigo font-mono mt-1">{feedback.romaji}</div>}</div>}
                                     {feedback.detail && <p className="text-gray-500 mb-4">{feedback.detail}</p>}
                                     <Button ref={nextBtnRef} onClick={nextQuestion} className="w-full">下一題 (Enter)</Button>
                                 </div>
@@ -311,6 +330,7 @@
             const fileInputRef = useRef(null);
             
             const filtered = vocabList.filter(v => v.word.includes(searchTerm) || v.meaning.includes(searchTerm));
+            const totalPages = Math.ceil(filtered.length / 50) || 1;
             const paginated = filtered.slice((currentPage-1)*50, currentPage*50);
 
             // CSV 匯出
@@ -325,18 +345,22 @@
                 link.click();
             };
 
-            // CSV 匯入
+            // CSV 匯入 (包含重複檢查)
             const handleFileChange = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 
-                setImportStatus({ loading: true, progress: '讀取檔案中...' });
+                setImportStatus({ loading: true, progress: '讀取檔案並檢查重複...' });
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     const text = event.target.result;
                     const lines = text.split('\n');
                     
+                    // 建立現有單字 Set 用於快速比對
+                    const existingWords = new Set(vocabList.map(v => v.word));
                     let newItems = [];
+                    let duplicateCount = 0;
+
                     for (let i = 0; i < lines.length; i++) {
                         const line = lines[i].trim();
                         if (!line || line.startsWith('編號')) continue; 
@@ -347,15 +371,31 @@
                             if (parts.length === 4) { [, word, romaji, meaning] = parts; }
                             else { [word, romaji, meaning] = parts; }
                             
+                            word = word?.trim();
                             if (word && romaji) {
+                                // 檢查重複
+                                if (existingWords.has(word)) {
+                                    duplicateCount++;
+                                    continue;
+                                }
+
                                 newItems.push({
-                                    word: word.trim(),
+                                    word: word,
                                     romaji: romaji.trim(),
                                     meaning: (meaning || '').trim(),
                                     id: Date.now() + Math.random() + i // 暫時ID (離線用)
                                 });
+                                // 加入 Set 避免同一個 CSV 內也有重複
+                                existingWords.add(word);
                             }
                         }
+                    }
+
+                    if (newItems.length === 0) {
+                         alert(`未匯入任何資料。\n(發現 ${duplicateCount} 筆重複資料)`);
+                         setImportStatus({ loading: false, progress: '' });
+                         e.target.value = null;
+                         return;
                     }
 
                     // 如果有連線 Firebase，上傳資料 (強制等待完成)
@@ -392,7 +432,7 @@
                                 await batch.commit();
                             }
                             
-                            alert(`成功匯入 ${newItems.length} 筆單字到雲端！\n列表將自動更新。`);
+                            alert(`成功匯入 ${newItems.length} 筆單字！\n(已自動跳過 ${duplicateCount} 筆重複資料)`);
                         } catch(e) {
                             console.error(e);
                             alert("匯入雲端失敗，請檢查網路。錯誤: " + e.message);
@@ -402,7 +442,7 @@
                     } else {
                         // 離線模式手動更新
                         setVocabList(prev => [...newItems, ...prev]);
-                        alert(`已匯入 ${newItems.length} 筆單字 (離線模式)`);
+                        alert(`已匯入 ${newItems.length} 筆單字 (離線模式)\n(已跳過 ${duplicateCount} 筆重複)`);
                     }
                     
                     setImportStatus({ loading: false, progress: '' });
@@ -413,6 +453,13 @@
 
             const handleAdd = async () => {
                 if(!newWord.word) return;
+                
+                // 檢查是否重複
+                if (vocabList.some(v => v.word === newWord.word)) {
+                    alert('單字庫中已經有這個單字了！');
+                    return;
+                }
+
                 const tempItem = { ...newWord, id: Date.now(), userId: user?.uid };
                 
                 // 如果是離線，手動更新 UI；如果是連線，等待 Snapshot 更新
@@ -437,7 +484,6 @@
                 if(user && window.firebase) {
                     try {
                         await firebase.firestore().collection('user_vocab').doc(id).delete();
-                        // 雲端模式不需手動 setVocabList，onSnapshot 會處理
                     } catch(e) { console.log('Delete failed', e); }
                 } else {
                     setVocabList(prev => prev.filter(v => v.id !== id)); 
@@ -447,33 +493,42 @@
             return (
                 <div className="max-w-5xl mx-auto p-4 animate-slideIn">
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                        <div className="flex items-center"><Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 返回</Button><h2 className="text-2xl font-bold ml-2 text-gray-800">單字練習</h2></div>
-                        <div className="flex items-center gap-2"><LucideIcon name="Search" size={18}/><input className="border rounded-full px-4 py-2 w-full md:w-64" placeholder="搜尋..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
+                        <div className="flex items-center"><Button variant="ghost" onClick={onBack}><LucideIcon name="ChevronLeft" /> 返回</Button><h2 className="text-2xl font-bold ml-2 text-jp-dark font-jp-serif">管理單字庫</h2></div>
+                        <div className="flex items-center gap-2"><LucideIcon name="Search" size={18} className="text-jp-indigo"/><input className="border border-stone-300 rounded-full px-4 py-2 w-full md:w-64 focus:border-jp-indigo focus:ring-1 focus:ring-jp-indigo outline-none bg-white/80" placeholder="搜尋單字..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
                     </div>
                     
-                    <div className="mb-4 p-4 bg-blue-50 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-2 text-blue-800 text-sm">
+                    <div className="mb-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-stone-200 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+                        <div className="flex items-center gap-2 text-jp-indigo text-sm font-medium">
                             <LucideIcon name="Cloud" size={16}/> {user ? '雲端同步中' : '離線模式'} 
-                            <span className="font-bold ml-2">單字庫: {vocabList.length} 字</span>
+                            <span className="font-bold ml-2 text-jp-dark">總字數: {vocabList.length}</span>
                         </div>
                         <div className="flex gap-2 flex-wrap justify-center">
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" className="hidden" />
-                            <Button onClick={() => fileInputRef.current.click()} variant="secondary" className="text-xs py-2 bg-blue-600 text-white border-none hover:bg-blue-700" disabled={importStatus.loading}>
+                            <Button onClick={() => fileInputRef.current.click()} variant="secondary" className="text-xs py-2" disabled={importStatus.loading}>
                                 {importStatus.loading ? <><LucideIcon name="RotateCcw" className="animate-spin mr-1" size={14}/> {importStatus.progress}</> : <><LucideIcon name="Upload" size={14}/> 匯入 CSV</>}
                             </Button>
-                            <Button onClick={handleExportCSV} variant="secondary" className="text-xs py-2"><LucideIcon name="Download" size={14}/> 匯出 CSV</Button>
+                            <Button onClick={handleExportCSV} variant="light" className="text-xs py-2"><LucideIcon name="Download" size={14}/> 匯出 CSV</Button>
                             <Button onClick={()=>setIsAdding(true)} variant="primary" className="text-xs py-2"><LucideIcon name="Plus" size={14}/> 新增</Button>
                         </div>
                     </div>
 
                     {isAdding && (
-                        <div className="bg-white p-4 rounded-xl shadow-lg mb-4">
-                            <h3 className="font-bold mb-3 text-gray-700">新增單字</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                                <input className="border p-2 rounded" placeholder="日文 (例: 私)" value={newWord.word} onChange={e=>setNewWord({...newWord, word:e.target.value})} />
-                                <input className="border p-2 rounded" placeholder="拼音 (例: watashi)" value={newWord.romaji} onChange={e=>setNewWord({...newWord, romaji:e.target.value})} />
-                                <input className="border p-2 rounded" placeholder="意思 (例: 我)" value={newWord.meaning} onChange={e=>setNewWord({...newWord, meaning:e.target.value})} />
-                                <div className="flex gap-2">
+                        <div className="bg-white p-6 rounded-xl shadow-lg mb-6 border-l-4 border-jp-indigo animate-slideIn">
+                            <h3 className="font-bold mb-4 text-jp-dark font-jp-serif text-lg">新增單字</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">日文</label>
+                                    <input className="border p-2 rounded w-full focus:border-jp-indigo outline-none" placeholder="例: 私" value={newWord.word} onChange={e=>setNewWord({...newWord, word:e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">羅馬拼音</label>
+                                    <input className="border p-2 rounded w-full focus:border-jp-indigo outline-none" placeholder="例: watashi" value={newWord.romaji} onChange={e=>setNewWord({...newWord, romaji:e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">中文意思</label>
+                                    <input className="border p-2 rounded w-full focus:border-jp-indigo outline-none" placeholder="例: 我" value={newWord.meaning} onChange={e=>setNewWord({...newWord, meaning:e.target.value})} />
+                                </div>
+                                <div className="flex gap-2 items-end">
                                     <Button onClick={handleAdd} className="flex-1">儲存</Button>
                                     <Button onClick={() => setIsAdding(false)} variant="light" className="flex-1">取消</Button>
                                 </div>
@@ -481,26 +536,26 @@
                         </div>
                     )}
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="grid grid-cols-12 bg-gray-50 p-3 text-sm font-bold text-gray-500"><div className="col-span-1">#</div><div className="col-span-3">日文</div><div className="col-span-3">拼音</div><div className="col-span-4">意思</div><div className="col-span-1"></div></div>
-                        <div className="divide-y">
+                    <div className="bg-white rounded-xl shadow-md border border-stone-200 overflow-hidden">
+                        <div className="grid grid-cols-12 bg-stone-50 p-3 text-sm font-bold text-gray-600 border-b border-stone-200"><div className="col-span-1">#</div><div className="col-span-3">日文</div><div className="col-span-3">拼音</div><div className="col-span-4">意思</div><div className="col-span-1"></div></div>
+                        <div className="divide-y divide-stone-100">
                             {paginated.map((v, i) => (
-                                <div key={v.id} className="grid grid-cols-12 p-3 hover:bg-gray-50 items-center text-sm">
-                                    <div className="col-span-1 text-gray-400">{i+1 + (currentPage-1)*50}</div>
-                                    <div className="col-span-3 font-bold font-sans text-gray-800">{v.word}</div>
-                                    <div className="col-span-3 font-mono text-gray-500">{v.romaji}</div>
+                                <div key={v.id} className="grid grid-cols-12 p-3 hover:bg-stone-50 items-center text-sm transition-colors">
+                                    <div className="col-span-1 text-gray-400 font-mono">{i+1 + (currentPage-1)*50}</div>
+                                    <div className="col-span-3 font-bold font-jp-serif text-jp-dark text-lg">{v.word}</div>
+                                    <div className="col-span-3 font-mono text-jp-indigo text-xs">{v.romaji}</div>
                                     <div className="col-span-4 text-gray-600">{v.meaning}</div>
-                                    <div className="col-span-1 text-right"><button onClick={()=>handleDelete(v.id)} className="text-gray-300 hover:text-red-500"><LucideIcon name="Trash2" size={16}/></button></div>
+                                    <div className="col-span-1 text-right"><button onClick={()=>handleDelete(v.id)} className="text-gray-300 hover:text-jp-red transition-colors"><LucideIcon name="Trash2" size={16}/></button></div>
                                 </div>
                             ))}
-                            {paginated.length===0 && <div className="p-8 text-center text-gray-400">目前無單字。<br/>請點擊上方按鈕匯入 CSV 檔案。</div>}
+                            {paginated.length===0 && <div className="p-12 text-center text-gray-400">目前無單字。<br/>請點擊上方按鈕匯入 CSV 檔案。</div>}
                         </div>
                     </div>
                     
-                    <div className="flex justify-center mt-4 gap-4">
-                        <button disabled={currentPage===1} onClick={()=>setCurrentPage(p=>p-1)} className="p-2 bg-white rounded-full shadow disabled:opacity-50"><LucideIcon name="ChevronLeft" /></button>
-                        <span className="py-2">第 {currentPage} 頁</span>
-                        <button disabled={paginated.length<50} onClick={()=>setCurrentPage(p=>p+1)} className="p-2 bg-white rounded-full shadow disabled:opacity-50"><LucideIcon name="ChevronRight" /></button>
+                    <div className="flex justify-center items-center mt-6 gap-6">
+                        <button disabled={currentPage===1} onClick={()=>setCurrentPage(p=>p-1)} className="p-2 bg-white rounded-full shadow border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"><LucideIcon name="ChevronLeft" /></button>
+                        <span className="py-2 text-jp-dark font-bold font-mono text-sm">第 {currentPage} / {totalPages} 頁</span>
+                        <button disabled={currentPage >= totalPages} onClick={()=>setCurrentPage(p=>p+1)} className="p-2 bg-white rounded-full shadow border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"><LucideIcon name="ChevronRight" /></button>
                     </div>
                 </div>
             );
@@ -520,7 +575,7 @@
                     const unsubscribe = window.firebase.auth().onAuthStateChanged(u => {
                         setUser(u);
                         if(u) setDbStatus('connected');
-                        else setDbStatus('offline'); // 可能是未登入或初始化失敗
+                        else setDbStatus('offline');
                     });
                     
                     window.firebase.auth().signInAnonymously()
@@ -536,16 +591,14 @@
                 }
             }, []);
 
-            // 監聽雲端資料 - 修正: 移除 orderBy 以避免需要 Index
+            // 監聽雲端資料 - 移除 orderBy 以避免 Index 問題
             useEffect(() => {
                 if (user && window.firebase) {
                     const db = window.firebase.firestore();
-                    // 開啟持續監聽 (移除 orderBy('createdAt') 以避免 Index 報錯)
                     const unsubscribe = db.collection('user_vocab')
                         .where('userId', '==', user.uid)
                         .onSnapshot(snapshot => {
                             const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                            // 在前端進行排序
                             list.sort((a, b) => {
                                 const ta = a.createdAt?.seconds || 0;
                                 const tb = b.createdAt?.seconds || 0;
@@ -560,48 +613,72 @@
             }, [user]);
 
             if (view === 'home') return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-orange-50 to-indigo-50">
-                    <h1 className="text-4xl font-black text-indigo-900 mb-2">日本語学習</h1>
-                    <p className="text-gray-500 mb-6">累積單字，積沙成塔</p>
+                <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                    {/* 背景裝飾 */}
+                    <div className="absolute top-10 left-10 text-jp-pink/20 animate-float" style={{animationDelay:'0s'}}><LucideIcon name="Flower" size={60} /></div>
+                    <div className="absolute bottom-20 right-20 text-jp-pink/20 animate-float" style={{animationDelay:'2s'}}><LucideIcon name="Flower" size={80} /></div>
+                    <div className="absolute top-40 right-10 text-jp-pink/10 animate-float" style={{animationDelay:'4s'}}><LucideIcon name="Flower" size={40} /></div>
                     
-                    {/* 資料庫連線狀態顯示 */}
-                    <div className="mb-10 flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-sm border border-gray-100">
-                        {dbStatus === 'connecting' && <><LucideIcon name="Loader2" className="animate-spin text-yellow-500" size={16}/> <span className="text-gray-600">連線資料庫中...</span></>}
-                        {dbStatus === 'connected' && <><div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div> <span className="text-gray-600">資料庫已連線 (ID: {user?.uid.slice(0,5)}...)</span></>}
-                        {dbStatus === 'offline' && <><LucideIcon name="WifiOff" className="text-gray-400" size={16}/> <span className="text-gray-400">離線模式 (資料僅暫存)</span></>}
-                    </div>
+                    <div className="z-10 text-center">
+                        <div className="mb-2 text-jp-red font-bold tracking-[0.2em] text-sm uppercase">Japanese Learning System</div>
+                        <h1 className="text-5xl font-black text-jp-dark mb-4 font-jp-serif">日本語学習</h1>
+                        <p className="text-gray-500 mb-8 font-jp-serif">日々の積み重ねが、未来を創る。</p>
+                        
+                        {/* 資料庫連線狀態顯示 (移除 ID) */}
+                        <div className="mb-12 inline-flex items-center gap-2 px-5 py-2 bg-white/80 backdrop-blur rounded-full shadow-sm text-sm border border-stone-200">
+                            {dbStatus === 'connecting' && <><LucideIcon name="Loader2" className="animate-spin text-jp-indigo" size={16}/> <span className="text-gray-600">連線資料庫中...</span></>}
+                            {dbStatus === 'connected' && <><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div> <span className="text-gray-700 font-medium">資料庫已連線</span></>}
+                            {dbStatus === 'offline' && <><LucideIcon name="WifiOff" className="text-gray-400" size={16}/> <span className="text-gray-400">離線模式 (資料僅暫存)</span></>}
+                        </div>
 
-                    <div className="grid md:grid-cols-2 gap-6 w-full max-w-2xl">
-                        <div onClick={()=>setView('kana_menu')} className="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-1 transition cursor-pointer border-2 border-transparent hover:border-pink-300 group">
-                            <span className="text-4xl text-pink-500 font-bold block mb-4 group-hover:scale-110 transition-transform origin-left">あ</span>
-                            <h2 className="text-xl font-bold">五十音練習</h2>
-                        </div>
-                        <div onClick={()=>setView('vocab_menu')} className="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-1 transition cursor-pointer border-2 border-transparent hover:border-indigo-300 group">
-                            <LucideIcon name="Book" className="w-10 h-10 text-indigo-500 mb-4 group-hover:scale-110 transition-transform origin-left" />
-                            <h2 className="text-xl font-bold">單字練習</h2>
-                            <p className="text-sm text-gray-400 mt-2">目前單字數: {vocabList.length}</p>
+                        <div className="grid md:grid-cols-2 gap-8 w-full max-w-3xl mx-auto">
+                            <div onClick={()=>setView('kana_menu')} className="bg-white p-8 rounded-xl shadow-xl hover:-translate-y-2 transition-all cursor-pointer border-t-4 border-jp-pink group relative overflow-hidden">
+                                <div className="absolute -right-4 -bottom-4 text-jp-pink/10 group-hover:text-jp-pink/20 transition-colors"><span className="text-9xl font-jp-serif">あ</span></div>
+                                <span className="text-5xl text-jp-pink font-bold block mb-4 group-hover:scale-110 transition-transform origin-left font-jp-serif">あ</span>
+                                <h2 className="text-xl font-bold text-jp-dark relative z-10">五十音練習</h2>
+                                <p className="text-sm text-gray-400 mt-2 relative z-10">基礎假名、發音、拼音測驗</p>
+                            </div>
+                            <div onClick={()=>setView('vocab_menu')} className="bg-white p-8 rounded-xl shadow-xl hover:-translate-y-2 transition-all cursor-pointer border-t-4 border-jp-indigo group relative overflow-hidden">
+                                <div className="absolute -right-4 -bottom-4 text-jp-indigo/5 group-hover:text-jp-indigo/10 transition-colors"><LucideIcon name="Book" size={120} /></div>
+                                <div className="text-jp-indigo mb-4 group-hover:scale-110 transition-transform origin-left"><LucideIcon name="Book" size={48} /></div>
+                                <h2 className="text-xl font-bold text-jp-dark relative z-10">單字練習</h2>
+                                <p className="text-sm text-gray-400 mt-2 relative z-10">單字庫管理、中翻日測驗 <span className="bg-jp-indigo text-white text-xs px-2 py-0.5 rounded-full ml-1">{vocabList.length}</span></p>
+                            </div>
                         </div>
                     </div>
+                    
+                    <div className="absolute bottom-6 text-gray-300 text-xs font-mono">Design by Japanese Learning App</div>
                 </div>
             );
 
             if (view === 'kana_menu') return (
-                <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col justify-center gap-4">
-                    <Button variant="ghost" onClick={()=>setView('home')} className="self-start"><LucideIcon name="ChevronLeft"/> 首頁</Button>
-                    <h2 className="text-3xl font-bold text-center mb-4">五十音練習</h2>
-                    <Button onClick={()=>setView('kana_table')} variant="secondary">五十音表</Button>
-                    <Button onClick={()=>setView('quiz_kana_single')}>拼音練習 (單字)</Button>
-                    <Button onClick={()=>setView('quiz_kana_combo')}>連續拼音 (組合)</Button>
-                    <Button onClick={()=>setView('quiz_vocab_spell')}>日文單字拼音</Button>
+                <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col justify-center gap-4 relative">
+                     <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style={{backgroundImage: 'radial-gradient(#b91c1c 0.5px, transparent 0.5px)', backgroundSize: '30px 30px'}}></div>
+                    <Button variant="ghost" onClick={()=>setView('home')} className="self-start relative z-10"><LucideIcon name="Home"/> 首頁</Button>
+                    <div className="bg-white/80 backdrop-blur p-8 rounded-2xl shadow-xl border border-stone-100 relative z-10">
+                        <h2 className="text-3xl font-bold text-center mb-8 text-jp-dark font-jp-serif border-b pb-4">五十音練習</h2>
+                        <div className="space-y-3">
+                            <Button onClick={()=>setView('kana_table')} variant="secondary" className="w-full justify-between">五十音表 <LucideIcon name="ChevronRight" size={16}/></Button>
+                            <Button onClick={()=>setView('quiz_kana_single')} className="w-full justify-between bg-jp-indigo hover:bg-indigo-900 text-white">拼音練習 (單字) <LucideIcon name="Brain" size={16}/></Button>
+                            <Button onClick={()=>setView('quiz_kana_combo')} className="w-full justify-between bg-jp-indigo hover:bg-indigo-900 text-white">連續拼音 (組合) <LucideIcon name="Brain" size={16}/></Button>
+                            <Button onClick={()=>setView('quiz_vocab_spell')} className="w-full justify-between bg-jp-red hover:bg-red-800 text-white border-none">日文單字拼音 <LucideIcon name="CheckCircle" size={16}/></Button>
+                        </div>
+                    </div>
                 </div>
             );
 
             if (view === 'vocab_menu') return (
-                <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col justify-center gap-4">
-                    <Button variant="ghost" onClick={()=>setView('home')} className="self-start"><LucideIcon name="ChevronLeft"/> 首頁</Button>
-                    <h2 className="text-3xl font-bold text-center mb-4">單字練習</h2>
-                    <Button onClick={()=>setView('vocab_lib')} variant="secondary">管理單字庫 ({vocabList.length})</Button>
-                    <Button onClick={()=>setView('quiz_vocab_reverse')}>中翻日練習 (填日文)</Button>
+                <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col justify-center gap-4 relative">
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style={{backgroundImage: 'radial-gradient(#1e3a8a 0.5px, transparent 0.5px)', backgroundSize: '30px 30px'}}></div>
+                    <Button variant="ghost" onClick={()=>setView('home')} className="self-start relative z-10"><LucideIcon name="Home"/> 首頁</Button>
+                    <div className="bg-white/80 backdrop-blur p-8 rounded-2xl shadow-xl border border-stone-100 relative z-10">
+                        <h2 className="text-3xl font-bold text-center mb-2 text-jp-dark font-jp-serif">單字練習</h2>
+                        <p className="text-center text-gray-500 mb-8 text-sm">目前的單字量: <span className="font-bold text-jp-indigo text-lg">{vocabList.length}</span></p>
+                        <div className="space-y-3">
+                            <Button onClick={()=>setView('vocab_lib')} variant="secondary" className="w-full justify-between">管理單字庫 <LucideIcon name="ChevronRight" size={16}/></Button>
+                            <Button onClick={()=>setView('quiz_vocab_reverse')} className="w-full justify-between bg-jp-indigo hover:bg-indigo-900 text-white">中翻日練習 (填日文) <LucideIcon name="Brain" size={16}/></Button>
+                        </div>
+                    </div>
                 </div>
             );
 
